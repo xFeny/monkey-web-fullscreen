@@ -13,7 +13,7 @@ export default defineConfig({
       userscript: {
         name: "视频网站自动网页全屏｜倍速播放",
         author: "Feny",
-        version: "2.1.0",
+        version: "2.1.1",
         license: "GPL-3.0-only",
         namespace: "http://tampermonkey.net/",
         description:
