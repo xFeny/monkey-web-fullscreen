@@ -269,15 +269,10 @@
       };
       const actions = {
         N: () => clickElement("next"),
-        // 下一个视频
         F: () => clickElement("full", ZERO$1),
-        // 全屏
         D: () => clickElement("danmaku", 3),
-        // 弹幕开发
         A: () => this.stepPlaybackRate(INCREMENT_SYMBOL$1),
-        // 倍速加
         S: () => this.stepPlaybackRate(DECREMENT_SYMBOL$1),
-        // 倍速减
         Z: () => this.setPlaybackRate(1) && this.showToast("已恢复正常倍速播放")
       };
       actions[ASTERISK] = () => this.getPlayingVideo();
