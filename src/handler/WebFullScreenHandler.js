@@ -4,11 +4,11 @@ export default {
     const w = video.offsetWidth;
     if (0 === w) return false;
     if (window.innerWidth === w) return true;
-    if (isBiliLive()) return this.biliLiveWebFullScreen();
+    if (this.isBiliLive()) return this.biliLiveWebFullScreen();
     this.element.click();
     return true;
   },
-  biliLiveWebFullScreen() { // B站直播间网页全屏
+  biliLiveWebFullScreen() {
     try {
       const topWin = unsafeWindow.top;
       topWin.scrollTo({ top: 70 });

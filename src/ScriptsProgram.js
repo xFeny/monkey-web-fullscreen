@@ -1,7 +1,8 @@
 import constants from "./common/constants";
 import selectorConfig from "./common/selectorConfig";
 import VideoListenerHandler from "./handler/VideoListenerHandler";
-const { ZERO, ONE_SECOND, SOURCE, SHOW_TOAST_POSITION, SHOW_TOAST_TIME } = constants;
+const { EMPTY, ONE_SEC, MSG_SOURCE, SHOW_TOAST_POSITION, SHOW_TOAST_TIME } = constants;
+const matches = GM_info.script.matches.map((url) => url.replace(/\*/g, EMPTY));
 export default {
   init() {
     this.setupKeydownListener();
@@ -16,12 +17,16 @@ export default {
   getElement: () => document.querySelector(selectorConfig[location.host]?.webfull),
   videoCanUse: (video) => !isNaN(video.duration) && video.duration !== Infinity,
   isLivePage: () => location.href.includes("live"),
-  debounce(fn, delay = ONE_SECOND) {
+  isBiliLive: () => location.host === "live.bilibili.com",
+  debounce(fn, delay = ONE_SEC) {
     let timer;
     return function () {
       if (timer) clearTimeout(timer);
       timer = setTimeout(() => fn.apply(this, arguments), delay);
     };
+  },
+  inMatches() {
+    return matches.some((matche) => location.href.includes(matche));
   },
   setupUrlChangeListener() {
     const _wr = (method) => {
@@ -45,7 +50,7 @@ export default {
       if (video?.play) this.setupVideoListener();
     });
     observer.observe(document.body, { childList: true, subtree: true });
-    setTimeout(() => observer.disconnect(), ONE_SECOND * 10);
+    setTimeout(() => observer.disconnect(), ONE_SEC * 10);
   },
   rebindVideo: false,
   videoListenerCycles: 0,
@@ -86,16 +91,16 @@ export default {
       const videos = document.querySelectorAll("video");
       for (const video of videos) {
         const rect = video.getBoundingClientRect();
-        if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
-          if (this.video === video) return;
-          if (this.videoCanUse(video)) return this.rebindVideoEventsListener(video);
-        }
+        const isInRect = x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
+        if (!isInRect) continue;
+        if (this.video === video) return;
+        if (this.videoCanUse(video)) return this.rebindVideoEventsListener(video);
       }
     });
   },
   setupPageVisibilityListener() {
     window.addEventListener("visibilitychange", () => {
-      const video = this.video;
+      const video = this.isLivePage() ? this.getVideo() : this.video;
       const state = document.visibilityState;
       if (video) Object.is(state, "visible") ? video.play() : video.pause();
     });
@@ -105,7 +110,7 @@ export default {
     const x = rect.left + rect.width / 2;
     const y = rect.top + rect.height / 2;
     const videoGeo = (this.videoGeo = { x, y });
-    if (window.top !== window) window.parent.postMessage({ source: SOURCE, videoGeo }, "*");
+    if (window.top !== window) window.parent.postMessage({ source: MSG_SOURCE, videoGeo }, "*");
   },
   showToast(content, duration = SHOW_TOAST_TIME) {
     document.querySelector(".showToast")?.remove();
@@ -116,8 +121,8 @@ export default {
     toast.setAttribute("style", SHOW_TOAST_POSITION);
     this.video?.parentElement.parentElement.appendChild(toast);
     setTimeout(() => {
-      toast.style.opacity = ZERO;
-      setTimeout(() => toast.remove(), ONE_SECOND / 2);
+      toast.style.opacity = 0;
+      setTimeout(() => toast.remove(), ONE_SEC / 2);
     }, duration);
   },
 };

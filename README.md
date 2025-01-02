@@ -16,7 +16,7 @@
 > `S` 或 `-`：倍速 `-0.25 `  
 > `Z`：恢复正常倍速   
 > 数字 `1-9`：`1-9` 倍速  
-> 数字 `0`：播放/暂停（也许有用┐(￣ー￣)┌）  
+> ~~数字 `0`：播放/暂停（也许有用）~~   
 > 符号 `*`：重新绑定事件到新的`video`，多视频页(如***抖音、快手网页版***)设置倍速时使用。
 >
 > **Tips：可以修改对应的代码，定义为自己喜欢的快捷键。存在快捷键冲突请自行修改。**
@@ -77,7 +77,7 @@ B站视频播放完自动点击“取消连播”按钮；如果是视频合集�
 
 ```js
 // 修改为喜欢的
-PLAYBACK_RATE_STEP: 0.25
+PLAY_RATE_STEP: 0.25
 ```
 
 默认倍速提示时长5秒，觉得太久？
@@ -127,10 +127,6 @@ this.setupPageVisibilityListener();
 ```js
 const selectorConfig = {
     "www.bilibili.com": {
-        full: "div[aria-label='全屏']",
-        webfull: "div[aria-label='网页全屏']",
-        danmaku: ".bui-area",
-        next: ".bpx-player-ctrl-next",
         subtitle: ".bpx-player-ctrl-subtitle .bpx-common-svg-icon", // 新增的自定义快捷键有效点击元素
     }
 }
@@ -140,30 +136,45 @@ const selectorConfig = {
 
 ```js
 const actions = {
-    N: () => clickElement("next"),
-  	F: () => clickElement("full", ZERO),
-  	P: () => clickElement("webfull", 1),
-  	D: () => clickElement("danmaku", 3),
     T: () => clickElement("subtitle"), // 新增的自定义快捷键，"subtitle"为selectorConfig配置的key值
 };
 ```
 
+### 实验性扩展功能
+
+使用 [视频网页全屏（改）](https://greasyfork.org/zh-CN/scripts/495077-maximize-video-improve)  脚本时，需要鼠标悬停到视频上方，才可以按`esc`键进行网页全屏。
+
+使用本脚本可以按`P`键直接网页全屏，无需滑动鼠标，对某些自动播放页还是有一定的实用性的。<b style="color:red;">不能保证100%有效</b>。
+
+使用前需把：
+
+```js
+// @note        *://*/*
+```
+
+改成：
+
+```
+// @match        *://*/*
+```
+
 ### 更新历史
 
-- v 2.1.0
-  1. 移除在`@match`的鼠标悬停监听，该监听会影响腾讯视频的倍速播放。
-  2. 代码优化。
+- v 2.2.0
+  1. 移除 `0` 快捷键。
+  2. fix: B站直播可见性监听失效问题。
 
+- v 2.1.0
+  1. bug: 移除在`@match`中的地址鼠标悬停监听，该监听会影响腾讯视频的倍速播放。
+  1. fix: **抖音网页版**为直播间时也会应用倍速问题。
+  1. 新增对 [视频网页全屏（改）](https://greasyfork.org/zh-CN/scripts/495077-maximize-video-improve)  的实验性扩展。
 - v 2.0.0
 
   1. 新增倍速播放功能。
   2. 新增页面可见性监听，当视频播放标签页不可见时会暂停播放，可见时继续播放。
-  3. 代码优化。
-
 - v 0.9.9
 
-  解决B站直播不支持`全屏切换`、`关闭弹幕`快捷键。
-
+  1. 解决B站直播不支持`全屏切换`、`关闭弹幕`快捷键。
 - v 0.9.7
 
-  新增`全屏(F)`、`网页全屏(P)`、`下一个视频(N)`、`弹幕开关(D)`快捷键。
+  1. 新增`全屏(F)`、`网页全屏(P)`、`下一个视频(N)`、`弹幕开关(D)`快捷键。

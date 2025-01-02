@@ -1,4 +1,5 @@
 import "./style.css";
+import consts from "./common/constants";
 import ScriptsProgram from "./ScriptsProgram";
 import KeydownHandler from "./handler/KeydownHandler";
 import WebFullScreenHandler from "./handler/WebFullScreenHandler";
@@ -8,9 +9,7 @@ import VideoPlaybackRateHandler from "./handler/VideoPlaybackRateHandler";
 (function () {
   "use strict";
 
-  const BILI_LIVE_PAGE_REGEX = /live.bilibili.com\/(blanc\/)?\d+/;
-  window.isBiliLive = () => location.host === "live.bilibili.com";
-  if (isBiliLive() && !BILI_LIVE_PAGE_REGEX.test(location.href)) return;
+  if (ScriptsProgram.isBiliLive() && !consts.BILI_LIVE_REG.test(location.href)) return;
 
   const logicHandlers = [
     { handler: KeydownHandler },

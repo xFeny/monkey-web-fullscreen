@@ -1,6 +1,6 @@
 import constants from "../common/constants";
 import ScriptsProgram from "../ScriptsProgram";
-const { ZERO, DEFAULT_PLAYBACK_RATE, BILI_VIDEO_PAGE_REGEX, ACFUN_VIDEO_PAGE_REGEX } = constants;
+const { DEF_PLAY_RATE, BILI_VID_REG, ACFUN_VID_REG } = constants;
 // 视频监听事件逻辑处理
 // this指向的是video.addEventListener对象
 export default {
@@ -14,7 +14,7 @@ export default {
   timeupdate() {
     if (this.duration === NaN) return;
     const cachePlaybackRate = ScriptsProgram.getCachePlaybackRate();
-    if (!cachePlaybackRate || DEFAULT_PLAYBACK_RATE === cachePlaybackRate) return;
+    if (!cachePlaybackRate || DEF_PLAY_RATE === cachePlaybackRate) return;
     if (cachePlaybackRate === this.playbackRate) return;
     // console.log(`当前播放倍速为：${this.playbackRate}，记忆倍速为：${cachePlaybackRate}`);
     const reuslt = ScriptsProgram.setPlaybackRate(cachePlaybackRate);
@@ -27,7 +27,7 @@ export default {
     this.isToast = false;
     const href = location.href;
     // if (/[a-zA-z]+:\/\/[^\s]*/.test(href)) return;
-    if (!BILI_VIDEO_PAGE_REGEX.test(href) && !ACFUN_VIDEO_PAGE_REGEX.test(href)) return;
+    if (!BILI_VID_REG.test(href) && !ACFUN_VID_REG.test(href)) return;
     // 视频播放结束，退出网页全屏
     function exitWebFullScreen() {
       const video = ScriptsProgram.video;
@@ -39,7 +39,7 @@ export default {
     const switchBtn = document.querySelector(".video-pod .switch-btn.on");
     const podItems = document.querySelectorAll(".video-pod .video-pod__item");
     // B站视频合集，为最后集播放或关闭了合集连播
-    if (podItems.length > ZERO) {
+    if (podItems.length > 0) {
       const lastPodItem = podItems[podItems.length - 1];
       const scrolled = lastPodItem.dataset.scrolled;
       if (scrolled === "true" || !switchBtn) exitWebFullScreen();

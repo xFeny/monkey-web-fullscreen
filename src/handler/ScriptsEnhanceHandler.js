@@ -19,10 +19,9 @@ export default {
     const { x, y } = this.videoGeo;
     for (const element of iframes) {
       const rect = element.getBoundingClientRect();
-      if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
-        this.hoverElement = element;
-        return element;
-      }
+      const isInRect = x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
+      if (!isInRect) continue;
+      return (this.hoverElement = element);
     }
   },
   simulateMouseover(element) {
