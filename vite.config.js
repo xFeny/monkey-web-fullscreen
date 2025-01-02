@@ -28,7 +28,7 @@ export default defineConfig({
           ["note", ["v0.9.7 新增`全屏(F)`、`网页全屏(P)`、`下一个视频(N)`、`弹幕开关(D)`快捷键"]],
         ],
         match: [
-          "*://*/*",
+          // "*://*/*",
           "*://tv.sohu.com/v/*",
           "*://www.mgtv.com/b/*",
           "*://www.acfun.cn/v/*",
