@@ -45,12 +45,12 @@ export default {
     };
     actions[ASTERISK] = () => this.getPlayingVideo();
     actions[ZERO] = () => this.switchVideoPlayStatus();
-    actions[INCREMENT_SYMBOL] = () => this.stepPlaybackRate(INCREMENT_SYMBOL);
-    actions[DECREMENT_SYMBOL] = () => this.stepPlaybackRate(DECREMENT_SYMBOL);
+    actions[INCREMENT_SYMBOL] = () => this.stepPlaybackRate(INCREMENT_SYMBOL); // 倍速加
+    actions[DECREMENT_SYMBOL] = () => this.stepPlaybackRate(DECREMENT_SYMBOL); // 倍速减
 
     if (actions[key]) actions[key]();
-    if (/^[1-9]$/.test(key)) this.setPlaybackRate(key) && this.tipPlaybackRate();
-    if (Object.is("P", key)) this.inMatches() ? clickElement("webfull", 1) : this.enhance();
+    if (/^[1-9]$/.test(key)) this.setPlaybackRate(key) && this.tipPlaybackRate(); // 倍速
+    if (Object.is("P", key)) this.inMatches() ? clickElement("webfull", 1) : this.enhance(); // 网页全屏
   },
   inMatches() {
     // @matche列表

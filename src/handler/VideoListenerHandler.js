@@ -28,6 +28,7 @@ export default {
     const href = location.href;
     // if (/[a-zA-z]+:\/\/[^\s]*/.test(href)) return;
     if (!BILI_VIDEO_PAGE_REGEX.test(href) && !ACFUN_VIDEO_PAGE_REGEX.test(href)) return;
+    // 视频播放结束，退出网页全屏
     function exitWebFullScreen() {
       const video = ScriptsProgram.video;
       if (window.innerWidth === video.offsetWidth) ScriptsProgram.getElement()?.click();
