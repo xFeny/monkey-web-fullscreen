@@ -1,2 +1,169 @@
-# monkey-web-fullscreen
-支持哔哩哔哩、B站直播、腾讯视频、优酷视频、爱奇艺、芒果TV、搜狐视频、AcFun弹幕网播放页自动网页全屏，视频网站统一支持快捷键切换：全屏(F)、网页全屏(P)、下一个视频(N)、弹幕开关(D)，支持任意视频倍速播放，B站播放完自动退出网页全屏
+### 使用脚本前
+
+建议先在浏览器上安装 [uBlock Origin](https://www.crxsoso.com/webstore/detail/cjpalhdlnbpafiamejdnhcphjbkeiagm) 或 [AdGuard](https://www.crxsoso.com/webstore/detail/bgnkhhnnamicmpeenaelnjfhikgbkllg) 扩展，可有效移除视频网站的视频广告。
+
+### 脚本初衷
+
+个人比较喜欢使用网页全屏进行视频观看，B站视频看完会退出看看评论，又懒得每次都要鼠标滑动点击，基于此需求编写了该脚本。
+
+### 快捷键
+
+> `F`：切换全屏  
+> `P`：切换网页全屏  
+> `N`：下一个视频  
+> `D`：弹幕开/关  
+> `A` 或 `+`：倍速 `+0.25`  
+> `S` 或 `-`：倍速 `-0.25 `  
+> `Z`：恢复正常倍速   
+> 数字 `1-9`：`1-9` 倍速  
+> 数字 `0`：播放/暂停（也许有用┐(￣ー￣)┌）  
+> 符号 `*`：重新绑定事件到新的`video`，多视频页(如***抖音、快手网页版***)设置倍速时使用。
+>
+> **Tips：可以修改对应的代码，定义为自己喜欢的快捷键。存在快捷键冲突请自行修改。**
+
+### 关于自动网页全屏
+
+如果不需要打开视频播放页自动网页全屏。可在脚本中找到代码，注释掉：
+
+```js
+if (video?.play && element) this.webFullScreen() && observer.disconnect();
+```
+
+注释掉不会影响快捷键`网页全屏(P)`切换。
+
+### 关于自动退出网页全屏
+
+脚本默认对B站和AcFun弹幕网视频播放完自动退出全屏（番剧页不支持）。
+
+B站视频播放完自动点击“取消连播”按钮；如果是视频合集会判断是否为最后分P或关闭了合集“自动连播”，是的话自动退出网页全屏。
+
+如不需要该功能，可将脚本中下面注释的代码放开：
+
+```js
+// if (/[a-zA-z]+:\/\/[^\s]*/.test(href)) return;
+```
+
+### 关于倍速
+
+使用本脚本设置了倍速，再想切换回使用网站自带的倍速设置，需要先还原为正常倍速，不然网站自带的是不起作用的。
+
+相较于 [Greasy Fork](https://greasyfork.org/zh-CN/scripts) 上的其他视频倍速播放脚本，本脚本解决了以下问题：
+
+1. 解决<i style="color:#00DC5A">爱奇艺</i>播放一段时间会恢复正常倍速问题。
+2. 对于自动播放且视频在`<iframe>`中，不需要聚焦到视频元素上也可以设置倍速。
+3. 多视频页面如**抖音网页版**，切换新视频时，如果鼠标有悬停在视频上方自动应用记忆倍速，没有悬停的话，可以使用`*`快捷键应用记忆倍速。
+
+本脚本的倍速设置<b style="color:red;">默认是不匹配所有网页的</b>。
+
+需要的话可将脚本中的：
+
+```js
+// @note        *://*/*
+```
+
+改成：
+
+```js
+// @match        *://*/*
+```
+
+或只对特定网站`@match`，如**百度网盘**：
+
+```js
+// @match        *://pan.baidu.com/*
+```
+
+默认倍速步进为`±0.25`，不满足需求？
+
+```js
+// 修改为喜欢的
+PLAYBACK_RATE_STEP: 0.25
+```
+
+默认倍速提示时长5秒，觉得太久？
+
+```js
+// 修改为喜欢的
+SHOW_TOAST_TIME: ONE_SECOND * 5
+```
+
+默认倍速提示处于视频的左下方，可选居中提示。
+
+```js
+// 修改为居中提示
+SHOW_TOAST_POSITION: positions.center
+```
+
+#### 原理
+
+利用 `HTML5` `video` 对象 `playbackRate` 属性来设置播放速度，最高`16`倍播放（浏览器限制）。
+
+页面上没有`video`标签是无法应用倍速的，如**迅雷云盘**。
+
+#### 网站适配性
+
+本脚本<b style="color:red;">理论上</b>对所有网页，有`video`标签都能够进行倍速播放。某些网站会限定最高倍速。
+
+### 其他功能
+
+脚本实现了页面可见性监听，当视频播放标签页不可见时会暂停播放，可见时继续播放。
+
+如不需要该功能的话，把下面的代码注释掉：
+
+```js
+this.setupPageVisibilityListener();
+```
+
+### 自定义快捷键功能
+
+懒得滑动鼠标，想实现对网页上的某个元素通过快捷键点击？
+
+#### 示例
+
+如对**B站**定义`字幕开关(T)`快捷键。
+
+配置`selectorConfig`：
+
+```js
+const selectorConfig = {
+    "www.bilibili.com": {
+        full: "div[aria-label='全屏']",
+        webfull: "div[aria-label='网页全屏']",
+        danmaku: ".bui-area",
+        next: ".bpx-player-ctrl-next",
+        subtitle: ".bpx-player-ctrl-subtitle .bpx-common-svg-icon", // 新增的自定义快捷键有效点击元素
+    }
+}
+```
+
+找到**`execHotKeyActions`**方法，在`actions`中新增：
+
+```js
+const actions = {
+    N: () => clickElement("next"),
+  	F: () => clickElement("full", ZERO),
+  	P: () => clickElement("webfull", 1),
+  	D: () => clickElement("danmaku", 3),
+    T: () => clickElement("subtitle"), // 新增的自定义快捷键，"subtitle"为selectorConfig配置的key值
+};
+```
+
+### 更新历史
+
+- v 2.1.0
+  1. 移除在`@match`的鼠标悬停监听，该监听会影响腾讯视频的倍速播放。
+  2. 代码优化。
+
+- v 2.0.0
+
+  1. 新增倍速播放功能。
+  2. 新增页面可见性监听，当视频播放标签页不可见时会暂停播放，可见时继续播放。
+  3. 代码优化。
+
+- v 0.9.9
+
+  解决B站直播不支持`全屏切换`、`关闭弹幕`快捷键。
+
+- v 0.9.7
+
+  新增`全屏(F)`、`网页全屏(P)`、`下一个视频(N)`、`弹幕开关(D)`快捷键。
