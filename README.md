@@ -111,7 +111,7 @@ SHOW_TOAST_POSITION: positions.center
 如不需要该功能的话，把下面的代码注释掉：
 
 ```js
-this.setupPageVisibilityListener();
+this.setupVisibleListener();
 ```
 
 ### 自定义快捷键功能
@@ -154,7 +154,7 @@ const actions = {
 
 改成：
 
-```
+```js
 // @match        *://*/*
 ```
 

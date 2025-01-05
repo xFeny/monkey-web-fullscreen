@@ -18,5 +18,4 @@ export default Object.freeze({
   CACHED_PLAY_RATE_KEY: "FENY_SCRIPTS_V_PLAYBACK_RATE",
   ACFUN_VID_REG: /acfun.cn\/v/,
   BILI_VID_REG: /bilibili.com\/video/,
-  BILI_LIVE_REG: /live.bilibili.com\/(blanc\/)?\d+/,
 });

@@ -1,14 +1,8 @@
 import constants from "../common/constants";
-const {
-  INC_SYMBOL,
-  DEC_SYMBOL,
-  PLAY_RATE_STEP,
-  DEF_PLAY_RATE,
-  CACHED_PLAY_RATE_KEY,
-} = constants;
+const { INC_SYMBOL, DEC_SYMBOL, DEF_PLAY_RATE, PLAY_RATE_STEP, CACHED_PLAY_RATE_KEY } = constants;
 // 倍速播放逻辑处理
 export default {
-  checkVideoAvailability() {
+  checkVideoUsable() {
     if (this.isLivePage()) return false;
     if (!this.video) return false;
     if (this.rebindVideo) return true;
@@ -18,28 +12,28 @@ export default {
     this.setupVideoListener();
     return false;
   },
-  setPlaybackRate(playbackRate) {
-    if (!this.checkVideoAvailability()) return;
+  setPlayRate(playbackRate) {
+    if (!this.checkVideoUsable()) return;
     this.video.playbackRate = playbackRate;
-    this.cachePlaybackRate();
+    this.cachePlayRate();
     return true;
   },
-  stepPlaybackRate(_symbol) {
-    if (!this.checkVideoAvailability()) return;
+  adjPlayRate(_symbol) {
+    if (!this.checkVideoUsable()) return;
     if (INC_SYMBOL === _symbol) this.video.playbackRate += PLAY_RATE_STEP;
     if (DEC_SYMBOL === _symbol) this.video.playbackRate -= PLAY_RATE_STEP;
     if (0 === this.video.playbackRate) this.video.playbackRate = PLAY_RATE_STEP;
-    this.cachePlaybackRate();
-    this.tipPlaybackRate();
+    this.cachePlayRate();
+    this.showRateTip();
   },
-  cachePlaybackRate() {
+  cachePlayRate() {
     localStorage.setItem(CACHED_PLAY_RATE_KEY, this.video.playbackRate);
   },
-  getCachePlaybackRate() {
-    const cachePlaybackRate = localStorage.getItem(CACHED_PLAY_RATE_KEY);
-    return parseFloat(cachePlaybackRate || DEF_PLAY_RATE);
+  getCachePlayRate() {
+    const cachePlayRate = localStorage.getItem(CACHED_PLAY_RATE_KEY);
+    return parseFloat(cachePlayRate || DEF_PLAY_RATE);
   },
-  tipPlaybackRate() {
+  showRateTip() {
     const span = document.createElement("span");
     span.appendChild(document.createTextNode("正在以"));
     const child = span.cloneNode(true);
