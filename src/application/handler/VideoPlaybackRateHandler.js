@@ -1,5 +1,20 @@
 import constants from "../common/constants";
-const { INC_SYMBOL, DEC_SYMBOL, DEF_PLAY_RATE, PLAY_RATE_STEP, CACHED_PLAY_RATE_KEY } = constants;
+const {
+  INC_SYMBOL,
+  DEC_SYMBOL,
+  MUL_SYMBOL,
+  DIV_SYMBOL,
+  DEF_PLAY_RATE,
+  MAX_PLAY_RATE,
+  PLAY_RATE_STEP,
+  CACHED_PLAY_RATE_KEY,
+} = constants;
+const strategy = {
+  [MUL_SYMBOL]: (playRate) => playRate * 2,
+  [DIV_SYMBOL]: (playRate) => playRate / 2,
+  [INC_SYMBOL]: (playRate) => playRate + PLAY_RATE_STEP,
+  [DEC_SYMBOL]: (playRate) => playRate - PLAY_RATE_STEP,
+};
 // 倍速播放逻辑处理
 export default {
   checkVideoUsable() {
@@ -12,17 +27,18 @@ export default {
     this.setupVideoListener();
     return false;
   },
-  setPlayRate(playbackRate) {
+  setPlayRate(playRate) {
     if (!this.checkVideoUsable()) return;
-    this.video.playbackRate = playbackRate;
+    this.video.playbackRate = playRate;
     this.cachePlayRate();
     return true;
   },
-  adjPlayRate(_symbol) {
+  adjustPlayRate(_symbol) {
     if (!this.checkVideoUsable()) return;
-    if (INC_SYMBOL === _symbol) this.video.playbackRate += PLAY_RATE_STEP;
-    if (DEC_SYMBOL === _symbol) this.video.playbackRate -= PLAY_RATE_STEP;
-    if (0 === this.video.playbackRate) this.video.playbackRate = PLAY_RATE_STEP;
+    let playRate = this.video.playbackRate;
+    playRate = strategy[_symbol](playRate);
+    playRate = Math.max(PLAY_RATE_STEP, playRate);
+    this.video.playbackRate = Math.min(MAX_PLAY_RATE, playRate);
     this.cachePlayRate();
     this.showRateTip();
   },

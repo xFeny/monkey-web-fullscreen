@@ -15,7 +15,7 @@ export default {
       const el = Object.is(win, window) ? this.query("#player-ctnr") : this.query(".lite-room", win.document);
       // iframe嵌套直播间如果不滚动，nav导航栏不会自动隐藏
       win.scrollTo({ top: el?.getBoundingClientRect()?.top || 0 });
-      this.element.dispatchEvent(new MouseEvent("dblclick", { bubbles: true }));
+      this.element.dispatchEvent(new Event("dblclick", { bubbles: true }));
       localStorage.setItem("FULLSCREEN-GIFT-PANEL-SHOW", 0); // 关闭全屏礼物栏
       document.body.classList.add("hide-asida-area", "hide-aside-area"); // 关闭侧边聊天栏
       setTimeout(() => {

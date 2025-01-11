@@ -38,10 +38,10 @@ export default {
     }
     const switchBtn = App.query(".video-pod .switch-btn.on");
     const podItems = App.querys(".video-pod .video-pod__item");
-    // B站视频合集，为最后集播放或关闭了合集连播
     if (podItems.length > 0) {
       const lastPodItem = podItems[podItems.length - 1];
       const scrolled = lastPodItem.dataset.scrolled;
+      // B站视频合集播放的是合集最后一个或关闭了合集连播
       if (scrolled === "true" || !switchBtn) exitFullScr();
       return;
     }

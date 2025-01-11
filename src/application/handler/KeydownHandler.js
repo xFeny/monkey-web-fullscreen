@@ -1,6 +1,6 @@
 import constants from "../common/constants";
 import selectorConfig from "../common/selectorConfig";
-const { MSG_SOURCE, ASTERISK, INC_SYMBOL, DEC_SYMBOL } = constants;
+const { MSG_SOURCE, ASTERISK, INC_SYMBOL, DEC_SYMBOL, MUL_SYMBOL, DIV_SYMBOL } = constants;
 
 // 快捷键逻辑处理
 export default {
@@ -21,7 +21,9 @@ export default {
   keydownHandler(event) {
     const activeTagName = document.activeElement.tagName;
     if (["INPUT", "TEXTAREA"].includes(activeTagName)) return;
-    const hotKey = event.key.toUpperCase();
+    let hotKey = event.key.toUpperCase();
+    if (event.shiftKey && hotKey === INC_SYMBOL) hotKey = MUL_SYMBOL;
+    if (event.shiftKey && hotKey === DEC_SYMBOL) hotKey = DIV_SYMBOL;
     this.execHotKeyActions(hotKey);
     // 解决video在iframe中，不聚焦到iframe，倍速设置失败问题
     if (window.top === window && !this.video) this.postMsgToAllFrames({ hotKey });
@@ -36,14 +38,15 @@ export default {
       N: () => clickEl("next"),
       F: () => clickEl("full", 0),
       D: () => clickEl("danmaku", 3),
-      A: () => this.adjPlayRate(INC_SYMBOL),
-      S: () => this.adjPlayRate(DEC_SYMBOL),
+      A: () => this.adjustPlayRate(INC_SYMBOL),
+      S: () => this.adjustPlayRate(DEC_SYMBOL),
       Z: () => this.setPlayRate(1) && this.showToast("已恢复正常倍速播放"),
+      [ASTERISK]: () => this.getPlayingVideo(),
+      [INC_SYMBOL]: () => this.adjustPlayRate(INC_SYMBOL),
+      [DEC_SYMBOL]: () => this.adjustPlayRate(DEC_SYMBOL),
+      [MUL_SYMBOL]: () => this.adjustPlayRate(MUL_SYMBOL),
+      [DIV_SYMBOL]: () => this.adjustPlayRate(DIV_SYMBOL),
     };
-    actions[ASTERISK] = () => this.getPlayingVideo();
-    actions[INC_SYMBOL] = () => this.adjPlayRate(INC_SYMBOL); // +倍速
-    actions[DEC_SYMBOL] = () => this.adjPlayRate(DEC_SYMBOL); // -倍速
-
     if (actions[key]) actions[key]();
     if (/^[1-9]$/.test(key)) this.setPlayRate(key) && this.showRateTip(); // 倍速
     if (Object.is("P", key)) this.inMatches() ? clickEl("webfull", 1) : this.enhance(); // 网页全屏
