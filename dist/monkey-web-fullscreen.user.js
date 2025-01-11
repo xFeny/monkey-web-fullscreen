@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name         视频网站自动网页全屏｜倍速播放
 // @namespace    http://tampermonkey.net/
-// @version      2.2.1
+// @version      2.3.0
 // @author       Feny
-// @description  支持哔哩哔哩、B站直播、腾讯视频、优酷视频、爱奇艺、芒果TV、搜狐视频、AcFun弹幕网播放页自动网页全屏，视频网站统一支持快捷键切换：全屏(F)、网页全屏(P)、下一个视频(N)、弹幕开关(D)，支持任意视频倍速播放，B站播放完自动退出网页全屏
+// @description  支持哔哩哔哩、B站直播、腾讯视频、优酷视频、爱奇艺、芒果TV、搜狐视频、AcFun弹幕网自动网页全屏；快捷键切换：全屏(F)、网页全屏(P)、下一个视频(N)、弹幕开关(D)；支持任意视频倍速播放，提示记忆倍速；B站播放完自动退出网页全屏和取消连播。
 // @license      GPL-3.0-only
 // @icon         data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAqdJREFUWEftl91LFFEYxp/3jB9ESZjtSl51F1RUSgRCF/kHlF1IhiFhF65dqEQkBUErdJMStBukGwQre2NZUiCRqUiURkW65mIfqGUFsW6Ii0jY7p4Tc3Rqd5zaGVldAudynve8z28e3jMzh5Dmi1R/V0vQyRRWxgWG6x22SrcnOAhQcQIbwVtXba8y1EANSpS1xzJin5c/Dz+jRDPvGWoErwRw35zuh8ChpcXXFjbwi9k/WADA9viGgovGnxtFs6EmcApMvCdBA3oIIirl4N8NNQngmRYJiwTOE7EHHLERAmXFawQ6AdCQkRbjsZIMUvIFoV0HMSsEDjCgSK8tJqAHAEDAMWLKLOexx8tiVVDEhLLVQAtzRPcwKOUANSWCw1/rsBe6PcFz8dpfAdTFgtF+EmIvBG7pID7mZNl2zkVCFQbahzqHfYerddpNhFpdsnfqauzl8ZoEuO4JXdIKOefynnZlimxXhBbqjTZL/el8pzrAVjTGmKh12Bq1ddJs974abQDXfFMuAhQ6EodwDTHWAf6/BAoK8nD0cDEKtuVhyD+OzvvLXnyWJshyApedJ1F65M9n4tlAAF5fL168fGfJWCu2DDA61GpodLvjCdp8vfjyNWQJJGUAquvMzBzafD0yEc65KZCUAmiOo4FPEqS753VSiFUB0FxbPF244en6J8SqAoTD8zhYcjZ9AP6RCVRWNacHYPD5GJqudmBi8tvaAkxNBeUuuNv5NOkAqgUpm4FIJCrfA+r0z4bnTZmvCKCv+wrsts0JBg8fvZLGY28NfoqToFhOoOJ4CS40lMu2I28mpXFP37DpJ9YXWgZQG+Tm5mBL7qakA2aGakUAZhqbrVkH0BLoB34fzcyml5K6pd/yaicRlQlgV0q6mmwitMOpyfpVKfsFya4w73cz9xQAAAAASUVORK5CYII=
 // @homepage     https://github.com/xFeny/monkey-web-fullscreen
@@ -45,7 +45,10 @@
     ASTERISK: "*",
     INC_SYMBOL: "+",
     DEC_SYMBOL: "-",
+    MUL_SYMBOL: "×",
+    DIV_SYMBOL: "÷",
     DEF_PLAY_RATE: 1,
+    MAX_PLAY_RATE: 16,
     ONE_SEC: ONE_SECOND,
     PLAY_RATE_STEP: 0.25,
     SHOW_TOAST_TIME: ONE_SECOND * 5,
@@ -53,6 +56,7 @@
     MSG_SOURCE: "FENY_SCRIPTS_AUTO_WEB_FULLSCREEN",
     CACHED_PLAY_RATE_KEY: "FENY_SCRIPTS_V_PLAYBACK_RATE",
     ACFUN_VID_REG: /acfun.cn\/v/,
+    IQIYI_VID_REG: /iqiyi.com\/v_*/,
     BILI_VID_REG: /bilibili.com\/video/
   });
   const selectorConfig = {
@@ -233,7 +237,7 @@
       }, duration);
     }
   };
-  const { MSG_SOURCE, ASTERISK, INC_SYMBOL: INC_SYMBOL$1, DEC_SYMBOL: DEC_SYMBOL$1 } = constants;
+  const { MSG_SOURCE, ASTERISK, INC_SYMBOL: INC_SYMBOL$1, DEC_SYMBOL: DEC_SYMBOL$1, MUL_SYMBOL: MUL_SYMBOL$1, DIV_SYMBOL: DIV_SYMBOL$1 } = constants;
   const KeydownHandler = {
     setupKeydownListener() {
       const handler = (event) => this.keydownHandler.call(this, event);
@@ -250,7 +254,9 @@
     keydownHandler(event) {
       const activeTagName = document.activeElement.tagName;
       if (["INPUT", "TEXTAREA"].includes(activeTagName)) return;
-      const hotKey = event.key.toUpperCase();
+      let hotKey = event.key.toUpperCase();
+      if (event.shiftKey && hotKey === INC_SYMBOL$1) hotKey = MUL_SYMBOL$1;
+      if (event.shiftKey && hotKey === DEC_SYMBOL$1) hotKey = DIV_SYMBOL$1;
       this.execHotKeyActions(hotKey);
       if (window.top === window && !this.video) this.postMsgToAllFrames({ hotKey });
     },
@@ -264,13 +270,15 @@
         N: () => clickEl("next"),
         F: () => clickEl("full", 0),
         D: () => clickEl("danmaku", 3),
-        A: () => this.adjPlayRate(INC_SYMBOL$1),
-        S: () => this.adjPlayRate(DEC_SYMBOL$1),
-        Z: () => this.setPlayRate(1) && this.showToast("已恢复正常倍速播放")
+        A: () => this.adjustPlayRate(INC_SYMBOL$1),
+        S: () => this.adjustPlayRate(DEC_SYMBOL$1),
+        Z: () => this.setPlayRate(1) && this.showToast("已恢复正常倍速播放"),
+        [ASTERISK]: () => this.getPlayingVideo(),
+        [INC_SYMBOL$1]: () => this.adjustPlayRate(INC_SYMBOL$1),
+        [DEC_SYMBOL$1]: () => this.adjustPlayRate(DEC_SYMBOL$1),
+        [MUL_SYMBOL$1]: () => this.adjustPlayRate(MUL_SYMBOL$1),
+        [DIV_SYMBOL$1]: () => this.adjustPlayRate(DIV_SYMBOL$1)
       };
-      actions[ASTERISK] = () => this.getPlayingVideo();
-      actions[INC_SYMBOL$1] = () => this.adjPlayRate(INC_SYMBOL$1);
-      actions[DEC_SYMBOL$1] = () => this.adjPlayRate(DEC_SYMBOL$1);
       if (actions[key]) actions[key]();
       if (/^[1-9]$/.test(key)) this.setPlayRate(key) && this.showRateTip();
       if (Object.is("P", key)) this.inMatches() ? clickEl("webfull", 1) : this.enhance();
@@ -318,7 +326,7 @@
         win.scrollTo({ top: 70 });
         const el = Object.is(win, window) ? this.query("#player-ctnr") : this.query(".lite-room", win.document);
         win.scrollTo({ top: el?.getBoundingClientRect()?.top || 0 });
-        this.element.dispatchEvent(new MouseEvent("dblclick", { bubbles: true }));
+        this.element.dispatchEvent(new Event("dblclick", { bubbles: true }));
         localStorage.setItem("FULLSCREEN-GIFT-PANEL-SHOW", 0);
         document.body.classList.add("hide-asida-area", "hide-aside-area");
         setTimeout(() => {
@@ -366,7 +374,22 @@
       document.dispatchEvent(new KeyboardEvent("keydown", { keyCode: 27, bubbles: true }));
     }
   };
-  const { INC_SYMBOL, DEC_SYMBOL, DEF_PLAY_RATE, PLAY_RATE_STEP, CACHED_PLAY_RATE_KEY } = constants;
+  const {
+    INC_SYMBOL,
+    DEC_SYMBOL,
+    MUL_SYMBOL,
+    DIV_SYMBOL,
+    DEF_PLAY_RATE,
+    MAX_PLAY_RATE,
+    PLAY_RATE_STEP,
+    CACHED_PLAY_RATE_KEY
+  } = constants;
+  const strategy = {
+    [MUL_SYMBOL]: (playRate) => playRate * 2,
+    [DIV_SYMBOL]: (playRate) => playRate / 2,
+    [INC_SYMBOL]: (playRate) => playRate + PLAY_RATE_STEP,
+    [DEC_SYMBOL]: (playRate) => playRate - PLAY_RATE_STEP
+  };
   const VideoPlaybackRateHandler = {
     checkVideoUsable() {
       if (this.isLivePage()) return false;
@@ -376,17 +399,18 @@
       this.setupVideoListener();
       return false;
     },
-    setPlayRate(playbackRate) {
+    setPlayRate(playRate) {
       if (!this.checkVideoUsable()) return;
-      this.video.playbackRate = playbackRate;
+      this.video.playbackRate = playRate;
       this.cachePlayRate();
       return true;
     },
-    adjPlayRate(_symbol) {
+    adjustPlayRate(_symbol) {
       if (!this.checkVideoUsable()) return;
-      if (INC_SYMBOL === _symbol) this.video.playbackRate += PLAY_RATE_STEP;
-      if (DEC_SYMBOL === _symbol) this.video.playbackRate -= PLAY_RATE_STEP;
-      if (0 === this.video.playbackRate) this.video.playbackRate = PLAY_RATE_STEP;
+      let playRate = this.video.playbackRate;
+      playRate = strategy[_symbol](playRate);
+      playRate = Math.max(PLAY_RATE_STEP, playRate);
+      this.video.playbackRate = Math.min(MAX_PLAY_RATE, playRate);
       this.cachePlayRate();
       this.showRateTip();
     },
