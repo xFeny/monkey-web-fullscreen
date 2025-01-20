@@ -1,11 +1,17 @@
+import constants from "../common/constants";
+const { ONE_SEC, BILI_VID_REG } = constants;
 // 网页全屏逻辑处理
 export default {
+  isFull() {
+    return window.innerWidth === this.video.offsetWidth;
+  },
   webFullScreen(video) {
     const w = video.offsetWidth;
     if (0 === w) return false;
     if (window.innerWidth === w) return true;
     if (this.isBiliLive()) return this.biliLiveFullScr();
     this.element.click();
+    this.blibliExtras(video);
     return true;
   },
   biliLiveFullScr() {
@@ -28,5 +34,26 @@ export default {
       console.error("B站直播自动网页全屏异常：", error);
     }
     return true;
+  },
+  blibliExtras(video) {
+    // 自动关闭B站未登录状态下观看视频1分钟时的登录提示
+    if (!BILI_VID_REG.test(location.href)) return;
+    if (document.cookie.includes("DedeUserID")) return;
+    setTimeout(() => {
+      const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+          if (!video.paused) return;
+          if (mutation.nextSibling.tagName !== "DIV") return;
+          const close = this.query(".bili-mini-close-icon", mutation.nextSibling);
+          if (!close) return;
+          video.play();
+          close.click();
+          if (!this.isFull()) this.element.click();
+          observer.disconnect();
+        });
+      });
+      observer.observe(document.body, { childList: true });
+      setTimeout(() => observer.disconnect(), ONE_SEC * 70);
+    }, ONE_SEC * 10);
   },
 };
