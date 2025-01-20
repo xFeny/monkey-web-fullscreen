@@ -41,7 +41,7 @@ export default {
     if (document.cookie.includes("DedeUserID")) return;
     this.query("#bilibili-player .bpx-player-toast-wrap")?.remove();
     setTimeout(() => {
-      const observer = new MutationObserver((mutations, observer) => {
+      const observer = new MutationObserver((mutations) => {
         if (video.paused) video.play();
         if (!this.isFull()) this.element.click();
         mutations.forEach((mutation) => {
