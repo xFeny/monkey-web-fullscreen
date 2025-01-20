@@ -350,7 +350,7 @@
       if (document.cookie.includes("DedeUserID")) return;
       this.query("#bilibili-player .bpx-player-toast-wrap")?.remove();
       setTimeout(() => {
-        const observer = new MutationObserver((mutations, observer2) => {
+        const observer = new MutationObserver((mutations) => {
           if (video.paused) video.play();
           if (!this.isFull()) this.element.click();
           mutations.forEach((mutation) => {
@@ -359,7 +359,7 @@
               if (node.nodeType !== Node.ELEMENT_NODE) return;
               if (!node.matches(".bili-mini-mask")) return;
               this.query(".bili-mini-close-icon")?.click();
-              observer2.disconnect();
+              observer.disconnect();
             });
           });
         });
