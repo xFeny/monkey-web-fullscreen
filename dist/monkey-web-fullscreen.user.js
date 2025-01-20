@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         视频网站自动网页全屏｜倍速播放
 // @namespace    http://tampermonkey.net/
-// @version      2.3.0
+// @version      2.4.0
 // @author       Feny
 // @description  支持哔哩哔哩、B站直播、腾讯视频、优酷视频、爱奇艺、芒果TV、搜狐视频、AcFun弹幕网自动网页全屏；快捷键切换：全屏(F)、网页全屏(P)、下一个视频(N)、弹幕开关(D)；支持任意视频倍速播放，提示记忆倍速；B站播放完自动退出网页全屏和取消连播。
 // @license      GPL-3.0-only
@@ -72,7 +72,7 @@
     "www.bilibili.com": { full: "div[aria-label='全屏']", webfull: "div[aria-label='网页全屏']", danmaku: ".bui-area", next: ".bpx-player-ctrl-next" },
     "v.youku.com": { full: "#fullscreen-icon", webfull: "#webfullscreen-icon", danmaku: "div[class*='switch-img_12hDa turn-']", next: ".kui-next-icon-0" }
   };
-  const { DEF_PLAY_RATE: DEF_PLAY_RATE$1, BILI_VID_REG, ACFUN_VID_REG } = constants;
+  const { DEF_PLAY_RATE: DEF_PLAY_RATE$1, BILI_VID_REG: BILI_VID_REG$1, ACFUN_VID_REG } = constants;
   const VideoListenerHandler = {
     loadedmetadata() {
       this.volume = 1;
@@ -95,7 +95,7 @@
     ended() {
       this.isToast = false;
       const href = location.href;
-      if (!BILI_VID_REG.test(href) && !ACFUN_VID_REG.test(href)) return;
+      if (!BILI_VID_REG$1.test(href) && !ACFUN_VID_REG.test(href)) return;
       function exitFullScr() {
         const video = App.video;
         if (window.innerWidth === video.offsetWidth) App.getElement()?.click();
@@ -116,7 +116,7 @@
   };
   var _GM_info = /* @__PURE__ */ (() => typeof GM_info != "undefined" ? GM_info : void 0)();
   var _unsafeWindow = /* @__PURE__ */ (() => typeof unsafeWindow != "undefined" ? unsafeWindow : void 0)();
-  const { EMPTY, ONE_SEC, MSG_SOURCE: MSG_SOURCE$1, SHOW_TOAST_TIME, SHOW_TOAST_POSITION } = constants;
+  const { EMPTY, ONE_SEC: ONE_SEC$1, MSG_SOURCE: MSG_SOURCE$1, SHOW_TOAST_TIME, SHOW_TOAST_POSITION } = constants;
   const matches = _GM_info.script.matches.map((url) => url.replace(/\*/g, EMPTY));
   const App = {
     init() {
@@ -134,7 +134,7 @@
     getElement: () => document.querySelector(selectorConfig[location.host]?.webfull),
     validVideoDur: (video) => !isNaN(video.duration) && video.duration !== Infinity,
     inMatches: () => matches.some((matche) => location.href.includes(matche)),
-    debounce(fn, delay = ONE_SEC) {
+    debounce(fn, delay = ONE_SEC$1) {
       let timer;
       return function() {
         if (timer) clearTimeout(timer);
@@ -183,7 +183,7 @@
         if (video?.play) this.setupVideoListener();
       });
       observer.observe(document.body, { childList: true, subtree: true });
-      setTimeout(() => observer.disconnect(), ONE_SEC * 10);
+      setTimeout(() => observer.disconnect(), ONE_SEC$1 * 10);
     },
     video: null,
     rebindVideo: false,
@@ -233,7 +233,7 @@
       this.video?.parentElement?.parentElement?.appendChild(el);
       setTimeout(() => {
         el.style.opacity = 0;
-        setTimeout(() => el.remove(), ONE_SEC / 2);
+        setTimeout(() => el.remove(), ONE_SEC$1 / 2);
       }, duration);
     }
   };
@@ -311,13 +311,18 @@
       for (let i = 0; i < w; i += 100) moveEvt(i);
     }
   };
+  const { ONE_SEC, BILI_VID_REG } = constants;
   const WebFullScreenHandler = {
+    isFull() {
+      return window.innerWidth === this.video.offsetWidth;
+    },
     webFullScreen(video) {
       const w = video.offsetWidth;
       if (0 === w) return false;
       if (window.innerWidth === w) return true;
       if (this.isBiliLive()) return this.biliLiveFullScr();
       this.element.click();
+      this.blibliExtras(video);
       return true;
     },
     biliLiveFullScr() {
@@ -339,6 +344,26 @@
         console.error("B站直播自动网页全屏异常：", error);
       }
       return true;
+    },
+    blibliExtras(video) {
+      if (!BILI_VID_REG.test(location.href)) return;
+      if (document.cookie.includes("DedeUserID")) return;
+      setTimeout(() => {
+        const observer = new MutationObserver((mutations) => {
+          mutations.forEach((mutation) => {
+            if (!video.paused) return;
+            if (mutation.nextSibling.tagName !== "DIV") return;
+            const close = this.query(".bili-mini-close-icon", mutation.nextSibling);
+            if (!close) return;
+            video.play();
+            close.click();
+            if (!this.isFull()) this.element.click();
+            observer.disconnect();
+          });
+        });
+        observer.observe(document.body, { childList: true });
+        setTimeout(() => observer.disconnect(), ONE_SEC * 70);
+      }, ONE_SEC * 10);
     }
   };
   const ScriptsEnhanceHandler = {
