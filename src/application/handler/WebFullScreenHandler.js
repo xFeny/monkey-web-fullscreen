@@ -41,21 +41,20 @@ export default {
     if (document.cookie.includes("DedeUserID")) return;
     this.query("#bilibili-player .bpx-player-toast-wrap")?.remove();
     setTimeout(() => {
-      const observer = new MutationObserver((mutations) => {
+      const observer = new MutationObserver((mutations, observer) => {
+        if (video.paused) video.play();
+        if (!this.isFull()) this.element.click();
         mutations.forEach((mutation) => {
-          if (!video.paused) return;
           if (mutation.addedNodes.length === 0) return;
           mutation.addedNodes.forEach((node) => {
             if (node.nodeType !== Node.ELEMENT_NODE) return;
             if (!node.matches(".bili-mini-mask")) return;
-            this.query(".bili-mini-close-icon", node)?.click();
-            if (!this.isFull()) this.element.click();
+            this.query(".bili-mini-close-icon")?.click();
             observer.disconnect();
-            video.play();
           });
         });
       });
       observer.observe(document.body, { childList: true });
-    }, ONE_SEC * 10);
+    }, ONE_SEC * 59);
   },
 };
