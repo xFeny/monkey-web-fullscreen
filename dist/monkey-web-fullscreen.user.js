@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         视频网站自动网页全屏｜倍速播放
 // @namespace    http://tampermonkey.net/
-// @version      2.4.1
+// @version      2.4.2
 // @author       Feny
 // @description  支持哔哩哔哩、B站直播、腾讯视频、优酷视频、爱奇艺、芒果TV、搜狐视频、AcFun弹幕网自动网页全屏；快捷键切换：全屏(F)、网页全屏(P)、下一个视频(N)、弹幕开关(D)；支持任意视频倍速播放，提示记忆倍速；B站播放完自动退出网页全屏和取消连播。
 // @license      GPL-3.0-only
@@ -350,22 +350,21 @@
       if (document.cookie.includes("DedeUserID")) return;
       this.query("#bilibili-player .bpx-player-toast-wrap")?.remove();
       setTimeout(() => {
-        const observer = new MutationObserver((mutations) => {
+        const observer = new MutationObserver((mutations, observer2) => {
+          if (video.paused) video.play();
+          if (!this.isFull()) this.element.click();
           mutations.forEach((mutation) => {
-            if (!video.paused) return;
             if (mutation.addedNodes.length === 0) return;
             mutation.addedNodes.forEach((node) => {
               if (node.nodeType !== Node.ELEMENT_NODE) return;
               if (!node.matches(".bili-mini-mask")) return;
-              this.query(".bili-mini-close-icon", node)?.click();
-              if (!this.isFull()) this.element.click();
-              observer.disconnect();
-              video.play();
+              this.query(".bili-mini-close-icon")?.click();
+              observer2.disconnect();
             });
           });
         });
         observer.observe(document.body, { childList: true });
-      }, ONE_SEC * 10);
+      }, ONE_SEC * 59);
     }
   };
   const ScriptsEnhanceHandler = {
