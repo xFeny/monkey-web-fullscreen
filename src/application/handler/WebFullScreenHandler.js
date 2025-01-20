@@ -53,7 +53,6 @@ export default {
         });
       });
       observer.observe(document.body, { childList: true });
-      setTimeout(() => observer.disconnect(), ONE_SEC * 70);
     }, ONE_SEC * 10);
   },
 };
