@@ -39,17 +39,20 @@ export default {
     // 自动关闭B站未登录状态下观看视频1分钟时的登录提示
     if (!BILI_VID_REG.test(location.href)) return;
     if (document.cookie.includes("DedeUserID")) return;
+    this.query("#bilibili-player .bpx-player-toast-wrap")?.remove();
     setTimeout(() => {
       const observer = new MutationObserver((mutations) => {
         mutations.forEach((mutation) => {
           if (!video.paused) return;
-          if (mutation.nextSibling.tagName !== "DIV") return;
-          const close = this.query(".bili-mini-close-icon", mutation.nextSibling);
-          if (!close) return;
-          video.play();
-          close.click();
-          if (!this.isFull()) this.element.click();
-          observer.disconnect();
+          if (mutation.addedNodes.length === 0) return;
+          mutation.addedNodes.forEach((node) => {
+            if (node.nodeType !== Node.ELEMENT_NODE) return;
+            if (!node.matches(".bili-mini-mask")) return;
+            this.query(".bili-mini-close-icon", node)?.click();
+            if (!this.isFull()) this.element.click();
+            observer.disconnect();
+            video.play();
+          });
         });
       });
       observer.observe(document.body, { childList: true });
