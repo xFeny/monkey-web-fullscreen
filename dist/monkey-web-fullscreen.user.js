@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         视频网站自动网页全屏｜倍速播放
 // @namespace    http://tampermonkey.net/
-// @version      2.4.2
+// @version      2.4.3
 // @author       Feny
 // @description  支持哔哩哔哩、B站直播、腾讯视频、优酷视频、爱奇艺、芒果TV、搜狐视频、AcFun弹幕网自动网页全屏；快捷键切换：全屏(F)、网页全屏(P)、下一个视频(N)、弹幕开关(D)；支持任意视频倍速播放，提示记忆倍速；B站播放完自动退出网页全屏和取消连播。
 // @license      GPL-3.0-only
@@ -30,7 +30,7 @@
 // @note         *://*/*
 // ==/UserScript==
 
-(t=>{if(typeof GM_addStyle=="function"){GM_addStyle(t);return}const o=document.createElement("style");o.textContent=t,document.head.append(o)})(" .showToast{color:#fff!important;font-size:14px!important;padding:5px 15px!important;border-radius:5px!important;position:absolute!important;z-index:2147483647!important;transition:opacity .5s ease-in;background:#000000bf!important}.showToast .playbackRate{margin:0 3px!important;color:#ff6101!important} ");
+(t=>{if(typeof GM_addStyle=="function"){GM_addStyle(t);return}const o=document.createElement("style");o.textContent=t,document.head.append(o)})(' @charset "UTF-8";.showToast{color:#fff!important;font-size:14px!important;padding:5px 15px!important;border-radius:5px!important;position:absolute!important;z-index:2147483647!important;transition:opacity .5s ease-in;background:#000000bf!important}.showToast .playbackRate{margin:0 3px!important;color:#ff6101!important}#bilibili-player .bpx-player-toast-wrap,#bilibili-player .bpx-player-cmd-dm-wrap,#bilibili-player .bpx-player-dialog-wrap,.live-room-app #sidebar-vm,.live-room-app #prehold-nav-vm,.live-room-app #shop-popover-vm,.login-tip{display:none!important} ');
 
 (function () {
   'use strict';
@@ -55,6 +55,7 @@
     SHOW_TOAST_POSITION: positions.bottomLeft,
     MSG_SOURCE: "FENY_SCRIPTS_AUTO_WEB_FULLSCREEN",
     CACHED_PLAY_RATE_KEY: "FENY_SCRIPTS_V_PLAYBACK_RATE",
+    QQ_VID_REG: /v.qq.com\/x/,
     ACFUN_VID_REG: /acfun.cn\/v/,
     IQIYI_VID_REG: /iqiyi.com\/v_*/,
     BILI_VID_REG: /bilibili.com\/video/
@@ -179,8 +180,13 @@
       const observer = new MutationObserver(() => {
         const video = this.getVideo();
         this.element = this.getElement();
-        if (video?.play && this.element) this.webFullScreen(video) && observer.disconnect();
         if (video?.play) this.setupVideoListener();
+        if (video?.play && this.element) {
+          const result = this.webFullScreen(video);
+          if (!result) return;
+          observer.disconnect();
+          this.webFullScreenExtras();
+        }
       });
       observer.observe(document.body, { childList: true, subtree: true });
       setTimeout(() => observer.disconnect(), ONE_SEC$1 * 10);
@@ -311,7 +317,7 @@
       for (let i = 0; i < w; i += 100) moveEvt(i);
     }
   };
-  const { ONE_SEC, BILI_VID_REG } = constants;
+  const { ONE_SEC, QQ_VID_REG, BILI_VID_REG } = constants;
   const WebFullScreenHandler = {
     isFull() {
       return window.innerWidth === this.video.offsetWidth;
@@ -320,12 +326,11 @@
       const w = video.offsetWidth;
       if (0 === w) return false;
       if (window.innerWidth === w) return true;
-      if (this.isBiliLive()) return this.biliLiveFullScr();
+      if (this.isBiliLive()) return this.biliLiveWebFullScreen();
       this.element.click();
-      this.blibliExtras(video);
       return true;
     },
-    biliLiveFullScr() {
+    biliLiveWebFullScreen() {
       try {
         const win = _unsafeWindow.top;
         win.scrollTo({ top: 70 });
@@ -334,10 +339,6 @@
         this.element.dispatchEvent(new Event("dblclick", { bubbles: true }));
         localStorage.setItem("FULLSCREEN-GIFT-PANEL-SHOW", 0);
         document.body.classList.add("hide-asida-area", "hide-aside-area");
-        setTimeout(() => {
-          this.query("#shop-popover-vm")?.remove();
-          this.query("#sidebar-vm")?.remove();
-        }, 500);
         win?.livePlayer?.volume(100);
         win?.livePlayer?.switchQuality("10000");
       } catch (error) {
@@ -345,26 +346,33 @@
       }
       return true;
     },
-    blibliExtras(video) {
-      if (!BILI_VID_REG.test(location.href)) return;
-      if (document.cookie.includes("DedeUserID")) return;
-      this.query("#bilibili-player .bpx-player-toast-wrap")?.remove();
-      setTimeout(() => {
-        const observer = new MutationObserver((mutations) => {
-          if (video.paused) video.play();
-          if (!this.isFull()) this.element.click();
-          mutations.forEach((mutation) => {
-            if (mutation.addedNodes.length === 0) return;
-            mutation.addedNodes.forEach((node) => {
-              if (node.nodeType !== Node.ELEMENT_NODE) return;
-              if (!node.matches(".bili-mini-mask")) return;
-              this.query(".bili-mini-close-icon")?.click();
-              observer.disconnect();
-            });
+    webFullScreenExtras() {
+      this.biliVideoExtras();
+      this.tencentVideoExtras();
+    },
+    tencentVideoExtras() {
+      if (!QQ_VID_REG.test(location.href)) return;
+      const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+          if (mutation.addedNodes.length === 0) return;
+          mutation.addedNodes.forEach((node) => {
+            if (node.nodeType !== Node.ELEMENT_NODE) return;
+            if (!node.matches(".login-dialog-wrapper")) return;
+            this.query(".main-login-wnd-module_close-button__mt9WU")?.click();
+            observer.disconnect();
           });
         });
-        observer.observe(document.body, { childList: true });
-      }, ONE_SEC * 59);
+      });
+      observer.observe(this.query("#login_win"), { attributes: true, childList: true, subtree: true });
+    },
+    biliVideoExtras() {
+      if (!BILI_VID_REG.test(location.href)) return;
+      if (document.cookie.includes("DedeUserID")) return;
+      setTimeout(() => {
+        _unsafeWindow.__BiliUser__.isLogin = true;
+        _unsafeWindow.__BiliUser__.cache.data.isLogin = true;
+        _unsafeWindow.__BiliUser__.cache.data.mid = Date.now();
+      }, ONE_SEC * 3);
     }
   };
   const ScriptsEnhanceHandler = {
