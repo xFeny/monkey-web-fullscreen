@@ -64,8 +64,13 @@ export default {
     const observer = new MutationObserver(() => {
       const video = this.getVideo();
       this.element = this.getElement();
-      if (video?.play && this.element) this.webFullScreen(video) && observer.disconnect();
       if (video?.play) this.setupVideoListener();
+      if (video?.play && this.element) {
+        const result = this.webFullScreen(video);
+        if (!result) return;
+        observer.disconnect();
+        this.webFullScreenExtras();
+      }
     });
     observer.observe(document.body, { childList: true, subtree: true });
     setTimeout(() => observer.disconnect(), ONE_SEC * 10);

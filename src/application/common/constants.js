@@ -19,6 +19,7 @@ export default Object.freeze({
   SHOW_TOAST_POSITION: positions.bottomLeft,
   MSG_SOURCE: "FENY_SCRIPTS_AUTO_WEB_FULLSCREEN",
   CACHED_PLAY_RATE_KEY: "FENY_SCRIPTS_V_PLAYBACK_RATE",
+  QQ_VID_REG: /v.qq.com\/x/,
   ACFUN_VID_REG: /acfun.cn\/v/,
   IQIYI_VID_REG: /iqiyi.com\/v_*/,
   BILI_VID_REG: /bilibili.com\/video/,

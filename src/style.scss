@@ -1,0 +1,36 @@
+.showToast {
+  color: #fff !important;
+  font-size: 14px !important;
+  padding: 5px 15px !important;
+  border-radius: 5px !important;
+  position: absolute !important;
+  z-index: 2147483647 !important;
+  transition: opacity 500ms ease-in;
+  background: rgba(0, 0, 0, 0.75) !important;
+}
+.showToast .playbackRate {
+  margin: 0 3px !important;
+  color: #ff6101 !important;
+}
+
+#bilibili-player {
+  /* B站的登录、一键三连提示 */
+  .bpx-player-toast-wrap,
+  .bpx-player-cmd-dm-wrap,
+  .bpx-player-dialog-wrap {
+    display: none !important;
+  }
+}
+/* B站直播样式 START */
+.live-room-app {
+  #sidebar-vm,
+  #prehold-nav-vm,
+  #shop-popover-vm {
+    display: none !important;
+  }
+}
+
+.login-tip {
+  display: none !important;
+}
+/* B站直播样式 END */

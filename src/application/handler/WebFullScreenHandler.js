@@ -1,5 +1,5 @@
 import constants from "../common/constants";
-const { ONE_SEC, BILI_VID_REG } = constants;
+const { ONE_SEC, QQ_VID_REG, BILI_VID_REG } = constants;
 // 网页全屏逻辑处理
 export default {
   isFull() {
@@ -9,12 +9,11 @@ export default {
     const w = video.offsetWidth;
     if (0 === w) return false;
     if (window.innerWidth === w) return true;
-    if (this.isBiliLive()) return this.biliLiveFullScr();
+    if (this.isBiliLive()) return this.biliLiveWebFullScreen();
     this.element.click();
-    this.blibliExtras(video);
     return true;
   },
-  biliLiveFullScr() {
+  biliLiveWebFullScreen() {
     try {
       const win = unsafeWindow.top;
       win.scrollTo({ top: 70 });
@@ -24,10 +23,6 @@ export default {
       this.element.dispatchEvent(new Event("dblclick", { bubbles: true }));
       localStorage.setItem("FULLSCREEN-GIFT-PANEL-SHOW", 0); // 关闭全屏礼物栏
       document.body.classList.add("hide-asida-area", "hide-aside-area"); // 关闭侧边聊天栏
-      setTimeout(() => {
-        this.query("#shop-popover-vm")?.remove(); // 关闭不支持“小橙车”提示
-        this.query("#sidebar-vm")?.remove();
-      }, 500);
       win?.livePlayer?.volume(100); // 声音100%
       win?.livePlayer?.switchQuality("10000"); // 原画画质
     } catch (error) {
@@ -35,26 +30,34 @@ export default {
     }
     return true;
   },
-  blibliExtras(video) {
-    // 自动关闭B站未登录状态下观看视频1分钟时的登录提示
-    if (!BILI_VID_REG.test(location.href)) return;
-    if (document.cookie.includes("DedeUserID")) return;
-    this.query("#bilibili-player .bpx-player-toast-wrap")?.remove();
-    setTimeout(() => {
-      const observer = new MutationObserver((mutations) => {
-        if (video.paused) video.play();
-        if (!this.isFull()) this.element.click();
-        mutations.forEach((mutation) => {
-          if (mutation.addedNodes.length === 0) return;
-          mutation.addedNodes.forEach((node) => {
-            if (node.nodeType !== Node.ELEMENT_NODE) return;
-            if (!node.matches(".bili-mini-mask")) return;
-            this.query(".bili-mini-close-icon")?.click();
-            observer.disconnect();
-          });
+  webFullScreenExtras() {
+    this.biliVideoExtras();
+    this.tencentVideoExtras();
+  },
+  tencentVideoExtras() {
+    if (!QQ_VID_REG.test(location.href)) return;
+    // 自动关闭腾讯视频登录弹窗
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.addedNodes.length === 0) return;
+        mutation.addedNodes.forEach((node) => {
+          if (node.nodeType !== Node.ELEMENT_NODE) return;
+          if (!node.matches(".login-dialog-wrapper")) return;
+          this.query(".main-login-wnd-module_close-button__mt9WU")?.click();
+          observer.disconnect();
         });
       });
-      observer.observe(document.body, { childList: true });
-    }, ONE_SEC * 59);
+    });
+    observer.observe(this.query("#login_win"), { attributes: true, childList: true, subtree: true });
+  },
+  biliVideoExtras() {
+    if (!BILI_VID_REG.test(location.href)) return;
+    if (document.cookie.includes("DedeUserID")) return;
+    // 自动关闭B站未登录观看视频1分钟左右的登录弹窗
+    setTimeout(() => {
+      unsafeWindow.__BiliUser__.isLogin = true;
+      unsafeWindow.__BiliUser__.cache.data.isLogin = true;
+      unsafeWindow.__BiliUser__.cache.data.mid = Date.now();
+    }, ONE_SEC * 3);
   },
 };

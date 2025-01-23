@@ -1,4 +1,4 @@
-import "./style.css";
+import "./style.scss";
 import App from "./application";
 import KeydownHandler from "./application/handler/KeydownHandler";
 import WebFullScreenHandler from "./application/handler/WebFullScreenHandler";
