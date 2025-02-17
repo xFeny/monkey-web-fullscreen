@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         视频网站自动网页全屏｜倍速播放
 // @namespace    http://tampermonkey.net/
-// @version      2.4.3
+// @version      2.4.4
 // @author       Feny
 // @description  支持哔哩哔哩、B站直播、腾讯视频、优酷视频、爱奇艺、芒果TV、搜狐视频、AcFun弹幕网自动网页全屏；快捷键切换：全屏(F)、网页全屏(P)、下一个视频(N)、弹幕开关(D)；支持任意视频倍速播放，提示记忆倍速；B站播放完自动退出网页全屏和取消连播。
 // @license      GPL-3.0-only
@@ -334,7 +334,7 @@
       try {
         const win = _unsafeWindow.top;
         win.scrollTo({ top: 70 });
-        const el = Object.is(win, window) ? this.query("#player-ctnr") : this.query(".lite-room", win.document);
+        const el = Object.is(win, window) ? this.query("#player-ctnr") : this.query(":is(.lite-room, #player-ctnr)", win.document);
         win.scrollTo({ top: el?.getBoundingClientRect()?.top || 0 });
         this.element.dispatchEvent(new Event("dblclick", { bubbles: true }));
         localStorage.setItem("FULLSCREEN-GIFT-PANEL-SHOW", 0);
@@ -367,7 +367,7 @@
     },
     biliVideoExtras() {
       if (!BILI_VID_REG.test(location.href)) return;
-      if (document.cookie.includes("DedeUserID")) return;
+      if (document.cookie.includes("DedeUserID")) return player?.requestQuality(80);
       setTimeout(() => {
         _unsafeWindow.__BiliUser__.isLogin = true;
         _unsafeWindow.__BiliUser__.cache.data.isLogin = true;
