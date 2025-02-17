@@ -17,7 +17,9 @@ export default {
     try {
       const win = unsafeWindow.top;
       win.scrollTo({ top: 70 });
-      const el = Object.is(win, window) ? this.query("#player-ctnr") : this.query(".lite-room", win.document);
+      const el = Object.is(win, window)
+        ? this.query("#player-ctnr")
+        : this.query(":is(.lite-room, #player-ctnr)", win.document);
       // iframe嵌套直播间如果不滚动，nav导航栏不会自动隐藏
       win.scrollTo({ top: el?.getBoundingClientRect()?.top || 0 });
       this.element.dispatchEvent(new Event("dblclick", { bubbles: true }));
@@ -52,7 +54,7 @@ export default {
   },
   biliVideoExtras() {
     if (!BILI_VID_REG.test(location.href)) return;
-    if (document.cookie.includes("DedeUserID")) return;
+    if (document.cookie.includes("DedeUserID")) return player?.requestQuality(80); // 清晰度设置为 1080P
     // 自动关闭B站未登录观看视频1分钟左右的登录弹窗
     setTimeout(() => {
       unsafeWindow.__BiliUser__.isLogin = true;
