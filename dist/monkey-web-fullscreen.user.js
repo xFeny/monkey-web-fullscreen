@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         视频网站自动网页全屏｜倍速播放
 // @namespace    http://tampermonkey.net/
-// @version      2.4.4
+// @version      2.4.5
 // @author       Feny
 // @description  支持哔哩哔哩、B站直播、腾讯视频、优酷视频、爱奇艺、芒果TV、搜狐视频、AcFun弹幕网自动网页全屏；快捷键切换：全屏(F)、网页全屏(P)、下一个视频(N)、弹幕开关(D)；支持任意视频倍速播放，提示记忆倍速；B站播放完自动退出网页全屏和取消连播。
 // @license      GPL-3.0-only
@@ -94,6 +94,7 @@
       this.isToast = true;
     },
     ended() {
+      this.isEnded = true;
       this.isToast = false;
       const href = location.href;
       if (!BILI_VID_REG$1.test(href) && !ACFUN_VID_REG.test(href)) return;
@@ -146,7 +147,10 @@
       window.addEventListener("visibilitychange", () => {
         const state = document.visibilityState;
         const video = this.isLivePage() ? this.getVideo() : this.video;
-        if (video) Object.is(state, "visible") ? video.play() : video.pause();
+        if (!video) return;
+        if (video.isEnded) return;
+        this.webFullScreen(video);
+        Object.is(state, "visible") ? video.play() : video.pause();
       });
     },
     setupHoverListener() {
