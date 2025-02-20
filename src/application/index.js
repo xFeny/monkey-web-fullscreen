@@ -30,7 +30,10 @@ export default {
     window.addEventListener("visibilitychange", () => {
       const state = document.visibilityState;
       const video = this.isLivePage() ? this.getVideo() : this.video;
-      if (video) Object.is(state, "visible") ? video.play() : video.pause();
+      if (!video) return;
+      if (video.isEnded) return;
+      this.webFullScreen(video);
+      Object.is(state, "visible") ? video.play() : video.pause();
     });
   },
   setupHoverListener() {

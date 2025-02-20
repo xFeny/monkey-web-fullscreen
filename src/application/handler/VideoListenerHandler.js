@@ -24,6 +24,7 @@ export default {
     this.isToast = true;
   },
   ended() {
+    this.isEnded = true;
     this.isToast = false;
     const href = location.href;
     // if (/[a-zA-z]+:\/\/[^\s]*/.test(href)) return;
