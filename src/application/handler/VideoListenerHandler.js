@@ -29,23 +29,9 @@ export default {
     const href = location.href;
     // if (/[a-zA-z]+:\/\/[^\s]*/.test(href)) return;
     if (!BILI_VID_REG.test(href) && !ACFUN_VID_REG.test(href)) return;
-    // 视频播放结束，退出网页全屏
-    function exitFullScr() {
-      const video = App.video;
-      if (window.innerWidth === video.offsetWidth) App.getElement()?.click();
-      const cancelButton = App.query(".bpx-player-ending-related-item-cancel"); // B站“取消连播”按钮
-      if (cancelButton) cancelButton.click();
-      console.log("已退出网页全屏！！");
-    }
-    const switchBtn = App.query(".video-pod .switch-btn.on");
-    const podItems = App.querys(".video-pod .video-pod__item");
-    if (podItems.length > 0) {
-      const lastPodItem = podItems[podItems.length - 1];
-      const scrolled = lastPodItem.dataset.scrolled;
-      // B站视频合集播放的是合集最后一个或关闭了合集连播
-      if (scrolled === "true" || !switchBtn) exitFullScr();
-      return;
-    }
-    exitFullScr();
+    // B站视频合集播放的是合集最后一个或关闭了合集自动连播
+    const pods = App.querys('.video-pod .switch-btn:not(.on), .video-pod__item:last-of-type[data-scrolled="true"]');
+    if (pods.length === 0) return;
+    App.exitWebFullScreen();
   },
 };

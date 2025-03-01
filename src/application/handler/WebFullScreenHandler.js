@@ -13,6 +13,12 @@ export default {
     this.element.click();
     return true;
   },
+  exitWebFullScreen() {
+    if (window.innerWidth === this.video.offsetWidth) this.getElement()?.click();
+    const cancelButton = this.query(".bpx-player-ending-related-item-cancel"); // B站“取消连播”按钮
+    if (cancelButton) setTimeout(() => cancelButton.click(), 100);
+    console.log("已退出网页全屏！！");
+  },
   biliLiveWebFullScreen() {
     try {
       const win = unsafeWindow.top;
