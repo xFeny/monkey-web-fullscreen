@@ -100,8 +100,7 @@
       if (!BILI_VID_REG$1.test(href) && !ACFUN_VID_REG.test(href)) return;
       const pod = App.query(".video-pod");
       const pods = App.querys('.video-pod .switch-btn:not(.on), .video-pod__item:last-of-type[data-scrolled="true"]');
-      if (pods.length > 0) return App.exitWebFullScreen();
-      if (!pod) App.exitWebFullScreen();
+      if (!pod || pods.length > 0) App.exitWebFullScreen();
     }
   };
   var _GM_info = /* @__PURE__ */ (() => typeof GM_info != "undefined" ? GM_info : void 0)();
