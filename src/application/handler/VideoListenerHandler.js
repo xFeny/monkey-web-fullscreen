@@ -32,7 +32,6 @@ export default {
     // B站视频合集播放的是合集最后一个或关闭了合集自动连播
     const pod = App.query(".video-pod");
     const pods = App.querys('.video-pod .switch-btn:not(.on), .video-pod__item:last-of-type[data-scrolled="true"]');
-    if (pods.length > 0) return App.exitWebFullScreen();
-    if (!pod) App.exitWebFullScreen();
+    if (!pod || pods.length > 0) App.exitWebFullScreen();
   },
 };
