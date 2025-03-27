@@ -41,6 +41,7 @@ export default {
       A: () => this.adjustPlayRate(INC_SYMBOL),
       S: () => this.adjustPlayRate(DEC_SYMBOL),
       Z: () => this.setPlayRate(1) && this.showToast("已恢复正常倍速播放"),
+      0: () => (this.video.currentTime = this.video.currentTime + 30),
       [ASTERISK]: () => this.getPlayingVideo(),
       [INC_SYMBOL]: () => this.adjustPlayRate(INC_SYMBOL),
       [DEC_SYMBOL]: () => this.adjustPlayRate(DEC_SYMBOL),

@@ -23,6 +23,10 @@ export default {
     App.showRateTip();
     this.isToast = true;
   },
+  play() {
+    this.isEnded = false;
+    App.webFullScreen(this);
+  },
   ended() {
     this.isEnded = true;
     this.isToast = false;
