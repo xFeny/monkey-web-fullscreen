@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         视频网站自动网页全屏｜倍速播放
 // @namespace    http://tampermonkey.net/
-// @version      2.4.7
+// @version      2.4.8
 // @author       Feny
 // @description  支持哔哩哔哩、B站直播、腾讯视频、优酷视频、爱奇艺、芒果TV、搜狐视频、AcFun弹幕网自动网页全屏；快捷键切换：全屏(F)、网页全屏(P)、下一个视频(N)、弹幕开关(D)；支持任意视频倍速播放，提示记忆倍速；B站播放完自动退出网页全屏和取消连播。
 // @license      GPL-3.0-only
@@ -93,6 +93,10 @@
       App.showRateTip();
       this.isToast = true;
     },
+    play() {
+      this.isEnded = false;
+      App.webFullScreen(this);
+    },
     ended() {
       this.isEnded = true;
       this.isToast = false;
@@ -134,9 +138,7 @@
       window.addEventListener("visibilitychange", () => {
         const state = document.visibilityState;
         const video = this.isLivePage() ? this.getVideo() : this.video;
-        if (!video) return;
-        if (video.isEnded) return;
-        this.webFullScreen(video);
+        if (video?.isEnded) return;
         Object.is(state, "visible") ? video.play() : video.pause();
       });
     },
@@ -270,6 +272,7 @@
         A: () => this.adjustPlayRate(INC_SYMBOL$1),
         S: () => this.adjustPlayRate(DEC_SYMBOL$1),
         Z: () => this.setPlayRate(1) && this.showToast("已恢复正常倍速播放"),
+        0: () => this.video.currentTime = this.video.currentTime + 30,
         [ASTERISK]: () => this.getPlayingVideo(),
         [INC_SYMBOL$1]: () => this.adjustPlayRate(INC_SYMBOL$1),
         [DEC_SYMBOL$1]: () => this.adjustPlayRate(DEC_SYMBOL$1),
