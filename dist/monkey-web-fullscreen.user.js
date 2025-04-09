@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         视频网站自动网页全屏｜倍速播放
 // @namespace    http://tampermonkey.net/
-// @version      2.4.9
+// @version      2.5.0
 // @author       Feny
 // @description  支持哔哩哔哩、B站直播、腾讯视频、优酷视频、爱奇艺、芒果TV、搜狐视频、AcFun弹幕网自动网页全屏；快捷键切换：全屏(F)、网页全屏(P)、下一个视频(N)、弹幕开关(D)；支持任意视频倍速播放，提示记忆倍速；B站播放完自动退出网页全屏和取消连播。
 // @license      GPL-3.0-only
@@ -25,6 +25,7 @@
 // @match        *://www.bilibili.com/cheese/play/*
 // @match        *://www.bilibili.com/bangumi/play/*
 // @match        *://*bimiacg*.net/bangumi/*/play/*
+// @match        *://*bimiacg*.net/static/danmu/play*
 // @grant        GM_addStyle
 // @grant        GM_info
 // @grant        unsafeWindow
@@ -274,6 +275,7 @@
         S: () => this.adjustPlayRate(DEC_SYMBOL$1),
         Z: () => this.setPlayRate(1) && this.showToast("已恢复正常倍速播放"),
         0: () => this.video ? this.video.currentTime = this.video.currentTime + 30 : null,
+        ".": () => this.video ? this.video.paused ? this.video.play() : this.video.pause() : null,
         [ASTERISK]: () => this.getPlayingVideo(),
         [INC_SYMBOL$1]: () => this.adjustPlayRate(INC_SYMBOL$1),
         [DEC_SYMBOL$1]: () => this.adjustPlayRate(DEC_SYMBOL$1),
