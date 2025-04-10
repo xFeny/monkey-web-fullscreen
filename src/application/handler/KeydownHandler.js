@@ -1,5 +1,6 @@
 import constants from "../common/constants";
 import selectorConfig from "../common/selectorConfig";
+import douyu from "./douyu";
 const { MSG_SOURCE, ASTERISK, INC_SYMBOL, DEC_SYMBOL, MUL_SYMBOL, DIV_SYMBOL } = constants;
 
 // 快捷键逻辑处理
@@ -36,13 +37,16 @@ export default {
     };
     const actions = {
       N: () => clickEl("next"),
-      F: () => clickEl("full", 0),
-      D: () => clickEl("danmaku", 3),
+      F: () => (this.isDouyu() ? douyu.getFullIcon().click() : clickEl("full", 0)),
+      D: () => (this.isDouyu() ? douyu.getDanmakuIcon().click() : clickEl("danmaku", 3)),
       A: () => this.adjustPlayRate(INC_SYMBOL),
       S: () => this.adjustPlayRate(DEC_SYMBOL),
       Z: () => this.setPlayRate(1) && this.showToast("已恢复正常倍速播放"),
       0: () => (this.video ? (this.video.currentTime = this.video.currentTime + 30) : null),
-      ".": () => (this.video ? (this.video.paused ? this.video.play() : this.video.pause()) : null),
+      ".": () => {
+        if (this.isDouyu()) return this.video ? (this.video.paused ? douyu.play() : douyu.pause()) : null;
+        this.video ? (this.video.paused ? this.video.play() : this.video.pause()) : null;
+      },
       [ASTERISK]: () => this.getPlayingVideo(),
       [INC_SYMBOL]: () => this.adjustPlayRate(INC_SYMBOL),
       [DEC_SYMBOL]: () => this.adjustPlayRate(DEC_SYMBOL),
@@ -51,7 +55,9 @@ export default {
     };
     if (actions[key]) actions[key]();
     if (/^[1-9]$/.test(key)) this.setPlayRate(key) && this.showRateTip(); // 倍速
-    if (Object.is("P", key)) this.inMatches() ? clickEl("webfull", 1) : this.enhance(); // 网页全屏
+    if (Object.is("P", key)) {
+      this.inMatches() ? (this.isDouyu() ? douyu.getWebfullIcon().click() : clickEl("webfull", 1)) : this.enhance(); // 网页全屏
+    }
   },
   getPlayingVideo() {
     // 获取正在播放的video

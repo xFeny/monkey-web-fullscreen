@@ -22,6 +22,9 @@ const match = [
   "*://www.bilibili.com/bangumi/play/*",
   "*://*bimiacg*.net/bangumi/*/play/*",
   "*://*bimiacg*.net/static/danmu/play*",
+  "*://www.ezdmw.site/Index/video/*",
+  "*://player.ezdmw.com/danmuku/*",
+  "*://v.douyu.com/show/*",
 ];
 if (isDev) match.unshift("*://*/*");
 // https://vitejs.dev/config/
@@ -38,7 +41,7 @@ export default defineConfig({
       userscript: {
         match,
         author: "Feny",
-        version: "2.5.0",
+        version: "2.5.1",
         license: "GPL-3.0-only",
         name: "视频网站自动网页全屏｜倍速播放",
         namespace: "http://tampermonkey.net/",

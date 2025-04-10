@@ -10,7 +10,7 @@ export default {
     if (0 === w) return false;
     if (window.innerWidth === w) return true;
     if (this.isBiliLive()) return this.biliLiveWebFullScreen();
-    this.element.click();
+    this.element?.click();
     return true;
   },
   exitWebFullScreen() {

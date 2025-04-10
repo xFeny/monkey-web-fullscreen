@@ -1,6 +1,7 @@
 import constants from "./common/constants";
 import selectorConfig from "./common/selectorConfig";
 import VideoListenerHandler from "./handler/VideoListenerHandler";
+import douyu from "./handler/douyu";
 const { EMPTY, ONE_SEC, MSG_SOURCE, SHOW_TOAST_TIME, SHOW_TOAST_POSITION } = constants;
 const matches = GM_info.script.matches.map((url) => url.replace(/\*/g, EMPTY));
 export default {
@@ -11,14 +12,19 @@ export default {
     this.setupMutationObserver();
     this.setupUrlChangeListener();
   },
+  isDouyu: () => location.host === "v.douyu.com",
   isLivePage: () => location.href.includes("live"),
   isBiliLive: () => location.host === "live.bilibili.com",
   query: (selector, context) => (context || document).querySelector(selector),
   querys: (selector, context) => (context || document).querySelectorAll(selector),
-  getVideo: () => document.querySelector("video[src]") || document.querySelector("video"),
-  getElement: () => document.querySelector(selectorConfig[location.host]?.webfull),
   validVideoDur: (video) => !isNaN(video.duration) && video.duration !== Infinity,
   inMatches: () => matches.some((matche) => location.href.includes(matche)),
+  getVideo() {
+    return this.isDouyu() ? douyu.getVideo() : document.querySelector("video[src]") || document.querySelector("video");
+  },
+  getElement() {
+    return this.isDouyu() ? douyu.getWebfullIcon() : document.querySelector(selectorConfig[location.host]?.webfull);
+  },
   debounce(fn, delay = ONE_SEC) {
     let timer;
     return function () {
@@ -31,7 +37,7 @@ export default {
       const state = document.visibilityState;
       const video = this.isLivePage() ? this.getVideo() : this.video;
       if (video?.isEnded) return;
-      Object.is(state, "visible") ? video.play() : video.pause();
+      Object.is(state, "visible") ? video?.play() : video?.pause();
     });
   },
   setupHoverListener() {
@@ -109,14 +115,17 @@ export default {
     this.addVideoEvtListener(video);
   },
   setVideoGeo(video) {
-    const rect = video.getBoundingClientRect();
-    const x = rect.left + rect.width / 2;
-    const y = rect.top + rect.height / 2;
-    const videoGeo = (this.videoGeo = { x, y });
-    if (window.top !== window) window.parent.postMessage({ source: MSG_SOURCE, videoGeo }, "*");
+    try {
+      const rect = video.getBoundingClientRect();
+      const x = rect.left + rect.width / 2;
+      const y = rect.top + rect.height / 2;
+      const videoGeo = (this.videoGeo = { x, y });
+      if (window.top !== window) window.parent.postMessage({ source: MSG_SOURCE, videoGeo }, "*");
+    } catch (e) {}
   },
   showToast(content, duration = SHOW_TOAST_TIME) {
     this.query(".showToast")?.remove();
+    if (this.isDouyu()) douyu.addStyle();
     const el = document.createElement("div");
     if (content instanceof HTMLElement) el.appendChild(content);
     if (Object.is(typeof content, "string")) el.textContent = content;
