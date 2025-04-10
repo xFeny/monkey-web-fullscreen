@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         视频网站自动网页全屏｜倍速播放
 // @namespace    http://tampermonkey.net/
-// @version      2.5.0
+// @version      2.5.1
 // @author       Feny
 // @description  支持哔哩哔哩、B站直播、腾讯视频、优酷视频、爱奇艺、芒果TV、搜狐视频、AcFun弹幕网自动网页全屏；快捷键切换：全屏(F)、网页全屏(P)、下一个视频(N)、弹幕开关(D)；支持任意视频倍速播放，提示记忆倍速；B站播放完自动退出网页全屏和取消连播。
 // @license      GPL-3.0-only
@@ -26,6 +26,9 @@
 // @match        *://www.bilibili.com/bangumi/play/*
 // @match        *://*bimiacg*.net/bangumi/*/play/*
 // @match        *://*bimiacg*.net/static/danmu/play*
+// @match        *://www.ezdmw.site/Index/video/*
+// @match        *://player.ezdmw.com/danmuku/*
+// @match        *://v.douyu.com/show/*
 // @grant        GM_addStyle
 // @grant        GM_info
 // @grant        unsafeWindow
@@ -109,6 +112,55 @@
       if (!pod || pods.length > 0) App.exitWebFullScreen();
     }
   };
+  const douyu = {
+    getRoot() {
+      return document.querySelector("demand-video").shadowRoot;
+    },
+    getControllerBar() {
+      return this.getRoot().querySelector("#demandcontroller-bar").shadowRoot;
+    },
+    getVideo() {
+      return this.getRoot().querySelector("video");
+    },
+    getWebfullIcon() {
+      return this.getControllerBar().querySelector(".ControllerBar-PageFull-Icon");
+    },
+    getFullIcon() {
+      return this.getControllerBar().querySelector(".ControllerBar-WindowFull-Icon");
+    },
+    getDanmakuIcon() {
+      return document.querySelector("demand-player-extension").shadowRoot.querySelector(".BarrageSwitch-icon");
+    },
+    play() {
+      this.getControllerBar().querySelector(".ControllerBarPlay").click();
+    },
+    pause() {
+      this.getControllerBar().querySelector(".ControllerBarStop").click();
+    },
+    addStyle() {
+      this.getRoot().querySelectorAll(".style").forEach((el) => el.remove());
+      const style = document.createElement("style");
+      style.setAttribute("class", "style");
+      style.textContent = `
+      .showToast {
+        color: #fff !important;
+        font-size: 14px !important;
+        padding: 5px 15px !important;
+        border-radius: 5px !important;
+        position: absolute !important;
+        z-index: 2147483647 !important;
+        transition: opacity 500ms ease-in;
+        background: rgba(0, 0, 0, 0.75) !important;
+      }
+      .showToast .playbackRate {
+        margin: 0 3px !important;
+        color: #ff6101 !important;
+      }
+    `;
+      this.getRoot().appendChild(style);
+      this.getRoot().querySelectorAll(".showToast").forEach((el) => el.remove());
+    }
+  };
   var _GM_info = /* @__PURE__ */ (() => typeof GM_info != "undefined" ? GM_info : void 0)();
   var _unsafeWindow = /* @__PURE__ */ (() => typeof unsafeWindow != "undefined" ? unsafeWindow : void 0)();
   const { EMPTY, ONE_SEC: ONE_SEC$1, MSG_SOURCE: MSG_SOURCE$1, SHOW_TOAST_TIME, SHOW_TOAST_POSITION } = constants;
@@ -121,14 +173,19 @@
       this.setupMutationObserver();
       this.setupUrlChangeListener();
     },
+    isDouyu: () => location.host === "v.douyu.com",
     isLivePage: () => location.href.includes("live"),
     isBiliLive: () => location.host === "live.bilibili.com",
     query: (selector, context) => (context || document).querySelector(selector),
     querys: (selector, context) => (context || document).querySelectorAll(selector),
-    getVideo: () => document.querySelector("video[src]") || document.querySelector("video"),
-    getElement: () => document.querySelector(selectorConfig[location.host]?.webfull),
     validVideoDur: (video) => !isNaN(video.duration) && video.duration !== Infinity,
     inMatches: () => matches.some((matche) => location.href.includes(matche)),
+    getVideo() {
+      return this.isDouyu() ? douyu.getVideo() : document.querySelector("video[src]") || document.querySelector("video");
+    },
+    getElement() {
+      return this.isDouyu() ? douyu.getWebfullIcon() : document.querySelector(selectorConfig[location.host]?.webfull);
+    },
     debounce(fn, delay = ONE_SEC$1) {
       let timer;
       return function() {
@@ -141,7 +198,7 @@
         const state = document.visibilityState;
         const video = this.isLivePage() ? this.getVideo() : this.video;
         if (video?.isEnded) return;
-        Object.is(state, "visible") ? video.play() : video.pause();
+        Object.is(state, "visible") ? video?.play() : video?.pause();
       });
     },
     setupHoverListener() {
@@ -218,14 +275,18 @@
       this.addVideoEvtListener(video);
     },
     setVideoGeo(video) {
-      const rect = video.getBoundingClientRect();
-      const x = rect.left + rect.width / 2;
-      const y = rect.top + rect.height / 2;
-      const videoGeo = this.videoGeo = { x, y };
-      if (window.top !== window) window.parent.postMessage({ source: MSG_SOURCE$1, videoGeo }, "*");
+      try {
+        const rect = video.getBoundingClientRect();
+        const x = rect.left + rect.width / 2;
+        const y = rect.top + rect.height / 2;
+        const videoGeo = this.videoGeo = { x, y };
+        if (window.top !== window) window.parent.postMessage({ source: MSG_SOURCE$1, videoGeo }, "*");
+      } catch (e) {
+      }
     },
     showToast(content, duration = SHOW_TOAST_TIME) {
       this.query(".showToast")?.remove();
+      if (this.isDouyu()) douyu.addStyle();
       const el = document.createElement("div");
       if (content instanceof HTMLElement) el.appendChild(content);
       if (Object.is(typeof content, "string")) el.textContent = content;
@@ -269,13 +330,16 @@
       };
       const actions = {
         N: () => clickEl("next"),
-        F: () => clickEl("full", 0),
-        D: () => clickEl("danmaku", 3),
+        F: () => this.isDouyu() ? douyu.getFullIcon().click() : clickEl("full", 0),
+        D: () => this.isDouyu() ? douyu.getDanmakuIcon().click() : clickEl("danmaku", 3),
         A: () => this.adjustPlayRate(INC_SYMBOL$1),
         S: () => this.adjustPlayRate(DEC_SYMBOL$1),
         Z: () => this.setPlayRate(1) && this.showToast("已恢复正常倍速播放"),
         0: () => this.video ? this.video.currentTime = this.video.currentTime + 30 : null,
-        ".": () => this.video ? this.video.paused ? this.video.play() : this.video.pause() : null,
+        ".": () => {
+          if (this.isDouyu()) return this.video ? this.video.paused ? douyu.play() : douyu.pause() : null;
+          this.video ? this.video.paused ? this.video.play() : this.video.pause() : null;
+        },
         [ASTERISK]: () => this.getPlayingVideo(),
         [INC_SYMBOL$1]: () => this.adjustPlayRate(INC_SYMBOL$1),
         [DEC_SYMBOL$1]: () => this.adjustPlayRate(DEC_SYMBOL$1),
@@ -284,7 +348,9 @@
       };
       if (actions[key]) actions[key]();
       if (/^[1-9]$/.test(key)) this.setPlayRate(key) && this.showRateTip();
-      if (Object.is("P", key)) this.inMatches() ? clickEl("webfull", 1) : this.enhance();
+      if (Object.is("P", key)) {
+        this.inMatches() ? this.isDouyu() ? douyu.getWebfullIcon().click() : clickEl("webfull", 1) : this.enhance();
+      }
     },
     getPlayingVideo() {
       const videos = this.querys("video");
@@ -324,7 +390,7 @@
       if (0 === w) return false;
       if (window.innerWidth === w) return true;
       if (this.isBiliLive()) return this.biliLiveWebFullScreen();
-      this.element.click();
+      this.element?.click();
       return true;
     },
     exitWebFullScreen() {
