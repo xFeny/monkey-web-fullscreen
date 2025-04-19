@@ -1,6 +1,7 @@
 import App from "../index";
 import constants from "../common/constants";
 const { DEF_PLAY_RATE, BILI_VID_REG, ACFUN_VID_REG } = constants;
+
 // 视频监听事件逻辑处理
 // this指向的是video.addEventListener对象
 export default {
@@ -9,6 +10,7 @@ export default {
     this.isToast = false;
   },
   loadeddata() {
+    this.volume = 1;
     this.isToast = false;
   },
   timeupdate() {

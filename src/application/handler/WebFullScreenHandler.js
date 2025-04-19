@@ -1,5 +1,5 @@
 import constants from "../common/constants";
-const { ONE_SEC, QQ_VID_REG, BILI_VID_REG } = constants;
+const { ONE_SEC, BILI_VID_REG } = constants;
 // 网页全屏逻辑处理
 export default {
   isFull() {
@@ -7,7 +7,8 @@ export default {
   },
   webFullScreen(video) {
     const w = video.offsetWidth;
-    if (0 === w) return false;
+    if (Object.is(0, w)) return false;
+    if (this.isCloseAuto()) return true;
     if (window.innerWidth === w) return true;
     if (this.isBiliLive()) return this.biliLiveWebFullScreen();
     this.element?.click();
@@ -17,7 +18,7 @@ export default {
     if (window.innerWidth === this.video.offsetWidth) this.getElement()?.click();
     const cancelButton = this.query(".bpx-player-ending-related-item-cancel"); // B站“取消连播”按钮
     if (cancelButton) setTimeout(() => cancelButton.click(), 100);
-    console.log("已退出网页全屏！！");
+    // console.log("已退出网页全屏！！");
   },
   biliLiveWebFullScreen() {
     try {
@@ -43,7 +44,7 @@ export default {
     this.tencentVideoExtras();
   },
   tencentVideoExtras() {
-    if (!QQ_VID_REG.test(location.href)) return;
+    if (!this.isTencent()) return;
     // 自动关闭腾讯视频登录弹窗
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {

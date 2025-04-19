@@ -2,21 +2,20 @@
 // 不需要滑动鼠标获取video，按`P`键即可网页全屏
 export default {
   enhance() {
-    const target = this.getHoverEl();
-    this.simuMouseover(target);
+    this.simuMouseover(this.getHoverEl());
     this.triggerKeydownEvt();
   },
   getHoverEl() {
+    if (!this.videoGeo) return;
     if (this.hoverEl) return this.hoverEl;
-    if (this.video) {
-      this.hoverEl = this.video?.parentElement?.parentElement;
-      return this.hoverEl;
-    }
+    if (this.video) return (this.hoverEl = this.video?.parentElement?.parentElement);
 
-    // 只适用于video距离浏览器顶部不是很远的距离
-    // 获取父窗口的所有iframe，根据video的中心点坐标，判断是否有iframe与其重合
-    const iframes = this.querys("iframe[src]");
     const { x, y } = this.videoGeo;
+    const iframe = this.getVideoIframe(); // video所在的iframe
+    if (iframe) return (this.hoverEl = iframe);
+
+    // 获取父窗口的所有iframe，根据video的坐标，判断是否有iframe与其重合
+    const iframes = this.querys("iframe:not([src=''])");
     for (const element of iframes) {
       const rect = element.getBoundingClientRect();
       const isInRect = x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
@@ -25,16 +24,15 @@ export default {
     }
   },
   simuMouseover(element) {
-    // 模拟鼠标悬停
+    console.log("鼠标悬停网页全屏元素：", element);
     if (!element) return;
     const x = element.offsetWidth / 2;
     const y = element.offsetHeight / 2;
-    const evt = new MouseEvent("mouseover", { clientX: x, clientY: y, bubbles: true });
-    element.dispatchEvent(evt);
+    element?.dispatchEvent(new MouseEvent("mouseover", { clientX: x, clientY: y, bubbles: true }));
   },
   triggerKeydownEvt() {
     // 触发键盘`esc`按键
     if (!this.video) return;
-    document.dispatchEvent(new KeyboardEvent("keydown", { keyCode: 27, bubbles: true }));
+    document?.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", keyCode: 27, bubbles: true }));
   },
 };

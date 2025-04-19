@@ -2,6 +2,7 @@ import { defineConfig } from "vite";
 import monkey, { util } from "vite-plugin-monkey";
 import AutoImport from "unplugin-auto-import/vite";
 const isDev = process.env.NODE_ENV === "development";
+// 自动网页全屏的，使用@match
 const match = [
   "*://tv.sohu.com/v/*",
   "*://www.mgtv.com/b/*",
@@ -16,15 +17,20 @@ const match = [
   "*://www.acfun.cn/bangumi/*",
   "*://www.bilibili.com/list/*",
   "*://www.bilibili.com/video/*",
+  "*://www.bilibili.com/*/play/*",
   "*://v.qq.com/live/p/newtopic/*",
   "*://www.bilibili.com/festival/*",
-  "*://www.bilibili.com/cheese/play/*",
-  "*://www.bilibili.com/bangumi/play/*",
-  "*://*bimiacg*.net/bangumi/*/play/*",
-  "*://*bimiacg*.net/static/danmu/play*",
+  "*://v.douyu.com/show/*",
+];
+
+// 无法自动网页全屏的，使用@include
+const include = [
+  "*://pages.iqiyi.com/p/zy/*",
   "*://www.ezdmw.site/Index/video/*",
   "*://player.ezdmw.com/danmuku/*",
-  "*://v.douyu.com/show/*",
+  "*://*bimiacg*.net/*/play*",
+  "*://acgfta.com/play*",
+  "*://ppoft.com/play*",
 ];
 if (isDev) match.unshift("*://*/*");
 // https://vitejs.dev/config/
@@ -40,8 +46,9 @@ export default defineConfig({
       entry: "src/main.js",
       userscript: {
         match,
+        include,
         author: "Feny",
-        version: "2.5.1",
+        version: "2.6.0",
         license: "GPL-3.0-only",
         name: "视频网站自动网页全屏｜倍速播放",
         namespace: "http://tampermonkey.net/",

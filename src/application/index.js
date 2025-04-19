@@ -2,28 +2,41 @@ import constants from "./common/constants";
 import selectorConfig from "./common/selectorConfig";
 import VideoListenerHandler from "./handler/VideoListenerHandler";
 import douyu from "./handler/douyu";
-const { EMPTY, ONE_SEC, MSG_SOURCE, SHOW_TOAST_TIME, SHOW_TOAST_POSITION } = constants;
-const matches = GM_info.script.matches.map((url) => url.replace(/\*/g, EMPTY));
+const { ONE_SEC, QQ_VID_REG, MSG_SOURCE, SHOW_TOAST_TIME, SHOW_TOAST_POSITION } = constants;
+const matches = GM_info.script.matches
+  .filter((match) => match !== "*://*/*")
+  .map((match) => match.replace(/\*/g, "\\S+"));
 export default {
   init() {
     this.setupHoverListener();
+    this.registerMenuCommand();
     this.setupVisibleListener();
     this.setupKeydownListener();
     this.setupMutationObserver();
     this.setupUrlChangeListener();
   },
+  isTopWin: () => window.top === window,
   isDouyu: () => location.host === "v.douyu.com",
+  isTencent: () => QQ_VID_REG.test(location.href),
   isLivePage: () => location.href.includes("live"),
   isBiliLive: () => location.host === "live.bilibili.com",
   query: (selector, context) => (context || document).querySelector(selector),
   querys: (selector, context) => (context || document).querySelectorAll(selector),
   validVideoDur: (video) => !isNaN(video.duration) && video.duration !== Infinity,
-  inMatches: () => matches.some((matche) => location.href.includes(matche)),
+  inMatches: () => matches.some((matche) => new RegExp(matche).test(location.href)),
+  postMessage: (win = null, data) => win?.postMessage({ source: MSG_SOURCE, ...data }, "*"),
   getVideo() {
-    return this.isDouyu() ? douyu.getVideo() : document.querySelector("video[src]") || document.querySelector("video");
+    return this.isDouyu() ? douyu.getVideo() : this.query("video:not([src=''])") || this.querys("video");
   },
   getElement() {
     return this.isDouyu() ? douyu.getWebfullIcon() : document.querySelector(selectorConfig[location.host]?.webfull);
+  },
+  getVideoIframe() {
+    // video所在的iframe标签
+    if (!this.videoGeo.frameSrc) return null;
+    const url = new URL(this.videoGeo.frameSrc);
+    const src = decodeURI(url.pathname + url.search);
+    return this.query(`iframe[src*="${src}"]`);
   },
   debounce(fn, delay = ONE_SEC) {
     let timer;
@@ -34,10 +47,10 @@ export default {
   },
   setupVisibleListener() {
     window.addEventListener("visibilitychange", () => {
-      const state = document.visibilityState;
+      window.top.focus();
       const video = this.isLivePage() ? this.getVideo() : this.video;
       if (video?.isEnded) return;
-      Object.is(state, "visible") ? video?.play() : video?.pause();
+      document.hidden ? video?.pause() : video?.play();
     });
   },
   setupHoverListener() {
@@ -67,7 +80,6 @@ export default {
     ["popstate", "pushState", "replaceState"].forEach((t) => _wr(t) & window.addEventListener(t, handler));
   },
   setupMutationObserver() {
-    this.videoListenerCycles = 0;
     const observer = new MutationObserver(() => {
       const video = this.getVideo();
       this.element = this.getElement();
@@ -84,14 +96,11 @@ export default {
   },
   video: null,
   rebindVideo: false,
-  videoListenerCycles: 0,
   videoBoundListeners: [],
   setupVideoListener() {
     if (this.isLivePage()) return;
-    if (this.videoListenerCycles >= 5) return;
     this.addVideoEvtListener(this.getVideo());
-    this.videoListenerCycles++;
-    // console.log("setupVideoListener 循环次数：", this.videoListenerCycles);
+    this.heartbeatCurrentVideo();
   },
   addVideoEvtListener(video) {
     this.video = video;
@@ -114,24 +123,43 @@ export default {
     this.rebindVideo = true;
     this.addVideoEvtListener(video);
   },
+  getPlayingVideo() {
+    const videos = this.querys("video");
+    if ([0, 1].includes(videos.length)) return true;
+    for (const video of videos) {
+      if (this.video === video || video.paused || !this.validVideoDur(video)) continue;
+      this.rebindVideoEvtListener(video); // 正在播放的video
+      return;
+    }
+  },
+  heartbeatCurrentVideo() {
+    // 页面上有多个video，获取当前播放的video
+    let intervalID = null;
+    if (intervalID) return;
+    intervalID = setInterval(() => {
+      const result = this.getPlayingVideo();
+      if (result) clearInterval(intervalID);
+    }, ONE_SEC);
+  },
   setVideoGeo(video) {
     try {
       const rect = video.getBoundingClientRect();
       const x = rect.left + rect.width / 2;
       const y = rect.top + rect.height / 2;
-      const videoGeo = (this.videoGeo = { x, y });
-      if (window.top !== window) window.parent.postMessage({ source: MSG_SOURCE, videoGeo }, "*");
+      const videoGeo = (this.videoGeo = { x, y, frameSrc: !this.isTopWin() ? location.href : null });
+      if (!this.isTopWin()) parent.postMessage({ source: MSG_SOURCE, videoGeo }, "*");
     } catch (e) {}
   },
   showToast(content, duration = SHOW_TOAST_TIME) {
-    this.query(".showToast")?.remove();
     if (this.isDouyu()) douyu.addStyle();
     const el = document.createElement("div");
     if (content instanceof HTMLElement) el.appendChild(content);
     if (Object.is(typeof content, "string")) el.textContent = content;
     el.setAttribute("class", "showToast");
     el.setAttribute("style", SHOW_TOAST_POSITION);
-    this.video?.parentElement?.parentElement?.appendChild(el);
+    const target = this.video?.parentElement?.parentElement;
+    this.query(".showToast", target)?.remove();
+    target?.appendChild(el);
     setTimeout(() => {
       el.style.opacity = 0;
       setTimeout(() => el.remove(), ONE_SEC / 2);
